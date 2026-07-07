@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ZamaProvider } from "@zama-fhe/react-sdk";
 import { wagmiConfig } from "@/lib/wagmi";
 import { buildZamaConfig } from "@/lib/zama";
+import { ToastProvider } from "@/components/ui/Toast";
 
 /**
  * ZamaConfigViem requires a live walletClient bound to Sepolia, so this only
@@ -40,7 +41,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <ZamaProviderGate>{children}</ZamaProviderGate>
+        <ZamaProviderGate>
+          <ToastProvider>{children}</ToastProvider>
+        </ZamaProviderGate>
       </QueryClientProvider>
     </WagmiProvider>
   );

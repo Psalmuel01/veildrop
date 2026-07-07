@@ -167,7 +167,7 @@ function ClaimPortalContent() {
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent-100 text-accent-700">
           <ShieldCheck className="size-6" />
         </div>
-        <h1 className="font-display text-2xl font-semibold text-ink-900">
+        <h1 className="font-display text-2xl font-bold text-ink-900">
           You&apos;ve been sent a confidential allocation
         </h1>
         <p className="mt-2 text-sm text-ink-500">

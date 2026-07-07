@@ -18,7 +18,7 @@ export function StepRecipients({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="font-display text-2xl font-semibold text-ink-900">Add recipients</h2>
+        <h2 className="font-display text-2xl font-bold text-ink-900">Add recipients</h2>
         <p className="mt-1 text-sm text-ink-500">
           Upload a CSV of <span className="font-mono">address,amount</span>, or add them one at a time.
         </p>

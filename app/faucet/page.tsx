@@ -102,7 +102,9 @@ export default function FaucetPage() {
       <Header />
       <main className="mx-auto max-w-lg px-5 py-16 sm:px-8">
         <div className="mb-8 text-center">
-          <h1 className="font-display text-3xl font-semibold text-ink-900">Developer faucet</h1>
+          <h1 className="font-display text-3xl font-bold text-ink-900">
+            Faucet<span className="text-accent-600">.</span>
+          </h1>
           <p className="mt-2 text-sm text-ink-500">Testnet-only. Never available on mainnet.</p>
         </div>
 

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ShieldCheck, Send, Gift, Lock, KeyRound, AlertTriangle } from "lucide-react";
+import { Send, Gift, Lock, KeyRound, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { Header } from "@/components/Header";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 
 export const metadata: Metadata = {
   title: "Docs — VeilDrop",
@@ -21,7 +22,7 @@ const SECTIONS = [
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24 border-b border-ink-900/8 py-14 first:pt-0 last:border-0">
-      <h2 className="font-display text-2xl font-semibold text-ink-900 sm:text-3xl">{title}</h2>
+      <h2 className="font-display text-2xl font-bold text-ink-900 sm:text-3xl">{title}</h2>
       <div className="mt-5 flex flex-col gap-4 text-[15px] leading-relaxed text-ink-700">{children}</div>
     </section>
   );
@@ -38,26 +39,24 @@ export default function DocsPage() {
             <a
               key={s.id}
               href={`#${s.id}`}
-              className="rounded-md px-3 py-1.5 text-sm text-ink-500 hover:bg-ink-900/5 hover:text-ink-900"
+              className="rounded-full px-3.5 py-1.5 text-sm text-ink-500 hover:bg-ink-900/5 hover:text-ink-900"
             >
               {s.label}
             </a>
           ))}
           <Link
             href="/faucet"
-            className="mt-4 rounded-md border border-ink-900/10 px-3 py-1.5 text-sm font-medium text-accent-600 hover:border-accent-600/40"
+            className="mt-4 flex items-center gap-1 rounded-full border border-ink-900/10 px-3.5 py-1.5 text-sm font-medium text-accent-600 hover:border-accent-600/40"
           >
-            Get testnet CTTT →
+            Get testnet CTTT
+            <ArrowUpRight className="size-3.5" />
           </Link>
         </nav>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent-600">
-            <ShieldCheck className="size-4" />
-            Documentation
-          </div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-ink-900">
-            How VeilDrop works
+          <Eyebrow className="mb-4">Documentation</Eyebrow>
+          <h1 className="font-display text-4xl font-bold tracking-tight text-ink-900">
+            How VeilDrop works<span className="text-accent-600">.</span>
           </h1>
           <p className="mt-3 max-w-2xl text-ink-500">
             Everything you need to distribute tokens confidentially, or claim an allocation someone

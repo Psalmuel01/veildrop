@@ -34,7 +34,7 @@ export function StepConfigure({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="font-display text-2xl font-semibold text-ink-900">Configure the distribution</h2>
+        <h2 className="font-display text-2xl font-bold text-ink-900">Configure the distribution</h2>
         <p className="mt-1 text-sm text-ink-500">Name it, and confirm the token you&apos;re sending.</p>
       </div>
 

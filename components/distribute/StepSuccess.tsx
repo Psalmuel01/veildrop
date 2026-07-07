@@ -51,7 +51,7 @@ export function StepSuccess({
         <CheckCircle2 className="size-7" />
       </div>
       <div>
-        <h2 className="font-display text-2xl font-semibold text-ink-900">
+        <h2 className="font-display text-2xl font-bold text-ink-900">
           {mode === "disperse" ? "Tokens dispersed" : "Airdrop is live"}
         </h2>
         <p className="mt-1 text-sm text-ink-500">

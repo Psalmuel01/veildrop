@@ -59,7 +59,7 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl font-semibold text-ink-900">Dashboard</h1>
+            <h1 className="font-display text-3xl font-bold text-ink-900">Dashboard</h1>
             <p className="mt-1 text-sm text-ink-500">Every distribution you&apos;ve created from this wallet.</p>
           </div>
           {isConnected && isSepolia && distributions.length > 0 && (

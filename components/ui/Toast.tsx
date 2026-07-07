@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 exit={{ opacity: 0, x: 24, scale: 0.96 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className={cn(
-                  "pointer-events-auto flex items-start gap-3 rounded-xl border bg-paper-50 p-4 shadow-[0_8px_30px_-8px_rgba(28,24,17,0.25)]",
+                  "pointer-events-auto flex items-start gap-3 rounded-xl border bg-paper-50 p-4 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.5)]",
                   className,
                 )}
               >

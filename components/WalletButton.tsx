@@ -51,7 +51,7 @@ export function WalletButton() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-lg border border-ink-900/10 bg-paper-50 shadow-[0_8px_30px_-8px_rgba(28,24,17,0.25)]">
+          <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-lg border border-ink-900/10 bg-paper-50 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.5)]">
             <button
               onClick={() => {
                 disconnect();

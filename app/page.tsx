@@ -17,7 +17,7 @@ export default function Home() {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] opacity-[0.35] [background-image:radial-gradient(circle_at_1px_1px,rgba(28,24,17,0.14)_1px,transparent_0)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,black_40%,transparent_100%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] opacity-[0.35] [background-image:radial-gradient(circle_at_1px_1px,rgba(234,246,247,0.1)_1px,transparent_0)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,black_40%,transparent_100%)]"
         />
         <div className="relative mx-auto max-w-5xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-600">
@@ -59,7 +59,7 @@ export default function Home() {
       </section>
 
       {/* The problem */}
-      <section className="relative overflow-hidden border-y border-ink-900/8 bg-ink-900 py-20 text-paper-100">
+      <section className="relative overflow-hidden border-y border-ink-900/8 bg-paper-50 py-20 text-ink-900">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-accent-600/20 blur-[100px]"
@@ -73,7 +73,7 @@ export default function Home() {
             <span className="text-accent-300">7–15%</span> within days of unlocks exceeding 1% of
             circulating supply.
           </p>
-          <p className="mt-6 max-w-2xl text-ink-300">
+          <p className="mt-6 max-w-2xl text-ink-500">
             Every distribution on a public blockchain is visible to every trader in real time.
             When a large allocation lands, algorithms front-run it before it settles. Confidential
             distribution keeps the transfer verifiable on-chain — but the amount unreadable to
@@ -124,7 +124,7 @@ export default function Home() {
             <Link
               key={template.id}
               href={`/distribute?template=${template.id}`}
-              className="group flex flex-col gap-3 rounded-2xl border border-ink-900/10 bg-paper-50 p-6 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(28,24,17,0.18)]"
+              className="group flex flex-col gap-3 rounded-2xl border border-ink-900/10 bg-paper-50 p-6 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)]"
             >
               <div className="flex size-10 items-center justify-center rounded-lg bg-ink-900/5 text-ink-700 group-hover:bg-accent-100 group-hover:text-accent-700">
                 <template.icon className="size-5" />

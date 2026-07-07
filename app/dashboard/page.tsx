@@ -26,7 +26,7 @@ function DistributionCard({ distribution }: { distribution: StoredDistribution }
   return (
     <Link
       href={`/dashboard/${distribution.id}`}
-      className="flex items-center justify-between gap-4 rounded-xl border border-ink-900/10 bg-paper-50 p-4 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(28,24,17,0.18)]"
+      className="flex items-center justify-between gap-4 rounded-xl border border-ink-900/10 bg-paper-50 p-4 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)]"
     >
       <div className="flex items-center gap-3">
         <div className="flex size-10 items-center justify-center rounded-lg bg-ink-900/5 text-ink-700">

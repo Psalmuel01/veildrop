@@ -7,11 +7,9 @@ const display = localFont({
   variable: "--font-display",
   display: "swap",
   src: [
-    { path: "./fonts/fraunces/fraunces-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/fraunces/fraunces-600.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/fraunces/fraunces-700.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/fraunces/fraunces-900.woff2", weight: "900", style: "normal" },
-    { path: "./fonts/fraunces/fraunces-600italic.woff2", weight: "600", style: "italic" },
+    { path: "./fonts/space-grotesk/sg-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/space-grotesk/sg-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/space-grotesk/sg-700.woff2", weight: "700", style: "normal" },
   ],
 });
 const body = localFont({
@@ -28,9 +26,8 @@ const mono = localFont({
   variable: "--font-mono",
   display: "swap",
   src: [
-    { path: "./fonts/jetbrains-mono/jbmono-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/jetbrains-mono/jbmono-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/jetbrains-mono/jbmono-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/space-mono/sm-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/space-mono/sm-700.woff2", weight: "700", style: "normal" },
   ],
 });
 

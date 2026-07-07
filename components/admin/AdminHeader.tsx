@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, Plus } from "lucide-react";
+import { Menu, X, Plus, BookOpen } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { BalanceWidget } from "@/components/admin/BalanceWidget";
 import { MintModal } from "@/components/admin/MintModal";
@@ -15,7 +15,6 @@ import { cn } from "@/lib/cn";
 const NAV_LINKS = [
   { href: "/distribute", label: "New Drop" },
   { href: "/dashboard", label: "My Drops" },
-  { href: "/docs", label: "Docs" },
   { href: "/faucet", label: "Faucet" },
 ];
 
@@ -78,6 +77,14 @@ export function AdminHeader() {
               </button>
             </div>
           )}
+          <Link
+            href="/docs"
+            className="hidden size-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 sm:flex"
+            aria-label="Documentation"
+            title="Documentation"
+          >
+            <BookOpen className="size-4" />
+          </Link>
           <WalletButton />
           <button
             onClick={() => setMenuOpen((o) => !o)}
@@ -121,6 +128,15 @@ export function AdminHeader() {
                   Mint test tokens
                 </button>
               )}
+              <div className="my-1 border-t border-ink-900/8" />
+              <Link
+                href="/docs"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-500 hover:bg-ink-900/5"
+              >
+                <BookOpen className="size-4" />
+                Docs
+              </Link>
             </div>
           </motion.nav>
         )}

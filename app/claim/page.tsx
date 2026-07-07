@@ -159,7 +159,7 @@ function ClaimPortalContent() {
     );
   }
 
-  const wrongWallet = isConnected && address!.toLowerCase() !== payload.recipient.toLowerCase();
+  const wrongWallet = isConnected && !!address && address.toLowerCase() !== payload.recipient.toLowerCase();
 
   return (
     <div className="mx-auto max-w-lg">

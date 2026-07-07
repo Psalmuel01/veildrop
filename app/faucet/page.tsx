@@ -8,7 +8,6 @@ import {
   useFaucetMetadata,
   useConfidentialBalance,
   useMintConfidential,
-  useMintUnderlying,
 } from "@tokenops/sdk/testnet-faucet/react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
@@ -46,7 +45,6 @@ function FaucetPanel() {
   const { push: toast } = useToast();
   const { data: meta, isLoading: isLoadingMeta } = useFaucetMetadata();
   const mintConfidential = useMintConfidential();
-  const mintUnderlying = useMintUnderlying();
 
   function invalidateFaucet() {
     queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "testnet-faucet"] });
@@ -59,10 +57,7 @@ function FaucetPanel() {
           <Droplets className="size-5 text-accent-600" />
           <CardTitle>Testnet faucet</CardTitle>
         </div>
-        <CardDescription>
-          Open and permissionless on Sepolia. Mint confidential CTTT to fund distributions, or plain
-          TTT to wrap yourself.
-        </CardDescription>
+        <CardDescription>Open and permissionless on Sepolia. Mint confidential CTTT to fund distributions.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-8">
         {isLoadingMeta || !meta ? (
@@ -73,45 +68,23 @@ function FaucetPanel() {
               <BalanceReveal tokenAddress={meta.confidential.address} symbol={meta.confidential.symbol} />
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                className="flex-1"
-                onClick={() =>
-                  mintConfidential.mutate(
-                    { amount: 1_000_000_000n },
-                    {
-                      onSuccess: () => {
-                        invalidateFaucet();
-                        toast({ kind: "success", title: "Minted 1,000 CTTT" });
-                      },
-                      onError: (err) => toast({ kind: "error", title: "Mint failed", description: err.message }),
+            <Button
+              onClick={() =>
+                mintConfidential.mutate(
+                  { amount: 1_000_000_000n },
+                  {
+                    onSuccess: () => {
+                      invalidateFaucet();
+                      toast({ kind: "success", title: "Minted 1,000 CTTT" });
                     },
-                  )
-                }
-                isLoading={mintConfidential.isPending}
-              >
-                Mint 1,000 {meta.confidential.symbol}
-              </Button>
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() =>
-                  mintUnderlying.mutate(
-                    { amount: 5n * 10n ** BigInt(meta.underlying.decimals) },
-                    {
-                      onSuccess: () => {
-                        invalidateFaucet();
-                        toast({ kind: "success", title: `Minted 5 ${meta.underlying.symbol}` });
-                      },
-                      onError: (err) => toast({ kind: "error", title: "Mint failed", description: err.message }),
-                    },
-                  )
-                }
-                isLoading={mintUnderlying.isPending}
-              >
-                Mint 5 {meta.underlying.symbol}
-              </Button>
-            </div>
+                    onError: (err) => toast({ kind: "error", title: "Mint failed", description: err.message }),
+                  },
+                )
+              }
+              isLoading={mintConfidential.isPending}
+            >
+              Mint 1,000 {meta.confidential.symbol}
+            </Button>
           </>
         )}
       </CardContent>

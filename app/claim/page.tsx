@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { RevealAmount } from "@/components/RevealAmount";
 import { useToast } from "@/components/ui/Toast";
 import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
+import { useIsZamaReady } from "@/app/providers";
 import { decodeClaimPayload, type ClaimPayload } from "@/lib/claim-link";
 import { formatAmount } from "@/lib/amount";
 
@@ -143,6 +144,7 @@ function ClaimPortalContent() {
   const searchParams = useSearchParams();
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
+  const isZamaReady = useIsZamaReady();
   const { data: meta } = useFaucetMetadata();
 
   const encoded = searchParams.get("payload");
@@ -197,6 +199,8 @@ function ClaimPortalContent() {
               </p>
               <WalletButton />
             </div>
+          ) : !isZamaReady ? (
+            <Skeleton className="h-72 w-full" />
           ) : (
             <ClaimActions payload={payload} tokenSymbol={meta?.confidential.symbol ?? "CTTT"} />
           )}

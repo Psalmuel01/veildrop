@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { WagmiProvider, useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,12 +9,20 @@ import { wagmiConfig } from "@/lib/wagmi";
 import { buildZamaConfig } from "@/lib/zama";
 import { ToastProvider } from "@/components/ui/Toast";
 
+const ZamaReadyContext = createContext(false);
+
 /**
- * ZamaConfigViem requires a live walletClient bound to Sepolia, so this only
- * mounts once a wallet is connected to the right chain. Rebuilding on every
- * account/chain change (rather than once at module scope) avoids signing
- * with a stale keypair after a wallet switch.
+ * True only once <ZamaProvider> is actually mounted below. Components that
+ * call Zama hooks (useZamaSDK, useHasPermit, useDecryptValues, ...) must gate
+ * on this — not on `isConnected && chainId === sepolia.id` from their own
+ * useAccount() call, which can be true a render or two before walletClient
+ * (and therefore ZamaProvider) is ready, throwing "must be used within a
+ * ZamaProvider".
  */
+export function useIsZamaReady() {
+  return useContext(ZamaReadyContext);
+}
+
 function ZamaProviderGate({ children }: { children: ReactNode }) {
   const { address, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
@@ -26,11 +34,13 @@ function ZamaProviderGate({ children }: { children: ReactNode }) {
     return buildZamaConfig(publicClient, walletClient);
   }, [isSepolia, publicClient, walletClient]);
 
-  if (!zamaConfig) return <>{children}</>;
+  if (!zamaConfig) {
+    return <ZamaReadyContext.Provider value={false}>{children}</ZamaReadyContext.Provider>;
+  }
 
   return (
     <ZamaProvider key={`${address}-${chainId}`} config={zamaConfig}>
-      {children}
+      <ZamaReadyContext.Provider value={true}>{children}</ZamaReadyContext.Provider>
     </ZamaProvider>
   );
 }

@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { formatAmount } from "@/lib/amount";
 import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
+import { useIsZamaReady } from "@/app/providers";
 
 function BalanceReveal({ tokenAddress, symbol }: { tokenAddress: `0x${string}`; symbol: string }) {
   const { data: handle, isLoading: isLoadingHandle } = useConfidentialBalance();
@@ -121,6 +122,7 @@ function FaucetPanel() {
 export default function FaucetPage() {
   const { isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
+  const isZamaReady = useIsZamaReady();
 
   return (
     <div className="min-h-screen bg-paper-100">
@@ -145,6 +147,12 @@ export default function FaucetPage() {
               <AlertTriangle className="size-8 text-error-600" />
               <p className="text-sm text-ink-700">The faucet only runs on Sepolia testnet.</p>
               <WalletButton />
+            </CardContent>
+          </Card>
+        ) : !isZamaReady ? (
+          <Card>
+            <CardContent className="py-12">
+              <Skeleton className="h-24 w-full" />
             </CardContent>
           </Card>
         ) : (

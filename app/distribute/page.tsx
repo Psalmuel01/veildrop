@@ -21,6 +21,7 @@ import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
 import { saveDistribution } from "@/lib/distributions";
 import { cn } from "@/lib/cn";
+import { useIsZamaReady } from "@/app/providers";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
 
 interface WizardResult {
@@ -60,6 +61,7 @@ function DistributeWizard() {
   const searchParams = useSearchParams();
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
+  const isZamaReady = useIsZamaReady();
   const { data: meta, isLoading: isLoadingMeta } = useFaucetMetadata();
 
   const initialTemplate = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
@@ -178,7 +180,7 @@ function DistributeWizard() {
             />
           )}
           {step === 3 &&
-            (isLoadingMeta || !meta ? (
+            (isLoadingMeta || !meta || !isZamaReady ? (
               <Skeleton className="h-64 w-full" />
             ) : mode === "disperse" ? (
               <StepReviewDisperse

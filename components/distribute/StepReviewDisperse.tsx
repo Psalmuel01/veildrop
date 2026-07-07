@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
-import { useZamaSDK } from "@zama-fhe/react-sdk";
+import { useZamaSDK, useConfidentialIsOperator, useConfidentialSetOperator } from "@zama-fhe/react-sdk";
 import {
   useIsRegistered,
   useRegister,
@@ -11,6 +11,7 @@ import {
   usePreflightDisperse,
   useDisperse,
 } from "@tokenops/sdk/fhe-disperse/react";
+import { getFheDisperseSingletonAddress } from "@tokenops/sdk";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import type { Address } from "viem";
 import { Button } from "@/components/ui/Button";
@@ -52,7 +53,7 @@ export function StepReviewDisperse({
 }) {
   const queryClient = useQueryClient();
   const { push: toast } = useToast();
-  const { address: user } = useAccount();
+  const { address: user, chainId } = useAccount();
   const zamaSDK = useZamaSDK();
   const [balanceSufficient, setBalanceSufficient] = useState<boolean | null>(null);
 
@@ -63,6 +64,18 @@ export function StepReviewDisperse({
   const { data: isRegistered, isLoading: isCheckingRegistration } = useIsRegistered({ user });
   const register = useRegister();
   const approve = useApproveTokenOnWallets();
+
+  // Wallet-mode disperse pulls the total from the admin's own balance into
+  // their subwallets before fanning out to recipients — that first leg needs
+  // the singleton approved as operator on the admin's balance directly, or
+  // the tx reverts with ERC7984UnauthorizedSpender(holder, spender).
+  const singletonAddress = chainId ? getFheDisperseSingletonAddress(chainId) : undefined;
+  const { data: isSingletonApproved, isLoading: isCheckingSingletonApproval } = useConfidentialIsOperator({
+    address: tokenAddress,
+    spender: singletonAddress,
+    holder: user,
+  });
+  const setSingletonOperator = useConfidentialSetOperator(tokenAddress);
 
   const { data: preflight, isLoading: isPreflighting } = usePreflightDisperse({
     user,
@@ -78,7 +91,7 @@ export function StepReviewDisperse({
     queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "fhe-disperse"] });
   }
 
-  const readyToExecute = !!preflight?.ready && balanceSufficient === true;
+  const readyToExecute = !!preflight?.ready && !!isSingletonApproved && balanceSufficient === true;
 
   return (
     <div className="flex flex-col gap-6">
@@ -160,6 +173,31 @@ export function StepReviewDisperse({
         />
         <ChecklistItem ok={!!preflight?.batchOk} pending={isPreflighting} label="Within batch size limit" />
         <ChecklistItem ok={!!preflight?.amountsOk} pending={isPreflighting} label="All recipients valid" />
+        <ChecklistItem
+          ok={!!isSingletonApproved}
+          pending={isCheckingSingletonApproval || setSingletonOperator.isPending}
+          label="Disperse approved to move your balance"
+          action={
+            !isSingletonApproved && (
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={setSingletonOperator.isPending}
+                onClick={() =>
+                  singletonAddress &&
+                  setSingletonOperator.mutate(
+                    { operator: singletonAddress, until: Math.floor(Date.now() / 1000) + 3600 },
+                    {
+                      onError: (err) => toast({ kind: "error", title: "Approval failed", description: err.message }),
+                    },
+                  )
+                }
+              >
+                Approve
+              </Button>
+            )
+          }
+        />
       </div>
 
       <BalanceCheck

@@ -15,12 +15,20 @@ import { StepTemplate } from "@/components/distribute/StepTemplate";
 import { StepConfigure, type DistributionConfig } from "@/components/distribute/StepConfigure";
 import { StepRecipients } from "@/components/distribute/StepRecipients";
 import { StepReviewDisperse } from "@/components/distribute/StepReviewDisperse";
+import { StepReviewAirdrop, type AirdropSuccessResult } from "@/components/distribute/StepReviewAirdrop";
 import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
 import { saveDistribution } from "@/lib/distributions";
 import { cn } from "@/lib/cn";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
+
+interface WizardResult {
+  mode: DistributionMode;
+  txHash: string;
+  recipientCount: number;
+  claimLinks?: AirdropSuccessResult["claimLinks"];
+}
 
 const STEPS = ["Use case", "Configure", "Recipients", "Review", "Done"] as const;
 
@@ -66,7 +74,7 @@ function DistributeWizard() {
     claimEnd: "",
   });
   const [recipients, setRecipients] = useState<RecipientRow[]>([]);
-  const [result, setResult] = useState<{ txHash: string; recipientCount: number } | null>(null);
+  const [result, setResult] = useState<WizardResult | null>(null);
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
   const summary = summarizeRecipients(recipients);
@@ -88,7 +96,32 @@ function DistributeWizard() {
         recipients: validRecipients.map((r) => ({ address: r.address, claimed: true })),
       });
     }
-    setResult({ txHash, recipientCount: validRecipients.length });
+    setResult({ mode: "disperse", txHash, recipientCount: validRecipients.length });
+    setStep(4);
+  }
+
+  function handleAirdropSuccess(airdropResult: AirdropSuccessResult) {
+    if (address) {
+      saveDistribution(address, {
+        id: crypto.randomUUID(),
+        mode: "airdrop",
+        templateId,
+        title: config.title || template.copy.title,
+        token: meta?.confidential.address ?? "",
+        tokenSymbol: meta?.confidential.symbol ?? "CTTT",
+        recipientCount: validRecipients.length,
+        createdAt: Date.now(),
+        txHash: airdropResult.txHash,
+        airdropAddress: airdropResult.airdropAddress,
+        recipients: airdropResult.claimLinks.map((c) => ({ address: c.address, claimed: false, claimUrl: c.url })),
+      });
+    }
+    setResult({
+      mode: "airdrop",
+      txHash: airdropResult.txHash,
+      recipientCount: validRecipients.length,
+      claimLinks: airdropResult.claimLinks,
+    });
     setStep(4);
   }
 
@@ -155,12 +188,21 @@ function DistributeWizard() {
                 onSuccess={handleDisperseSuccess}
               />
             ) : (
-              <div className="rounded-xl border border-dashed border-ink-900/20 p-8 text-center text-sm text-ink-500">
-                Airdrop review is coming next — switch to Disperse mode in step 1 for now.
-              </div>
+              <StepReviewAirdrop
+                recipients={validRecipients}
+                tokenAddress={meta.confidential.address}
+                tokenSymbol={meta.confidential.symbol}
+                config={config}
+                onSuccess={handleAirdropSuccess}
+              />
             ))}
           {step === 4 && result && (
-            <StepSuccess mode="disperse" txHash={result.txHash} recipientCount={result.recipientCount} />
+            <StepSuccess
+              mode={result.mode}
+              txHash={result.txHash}
+              recipientCount={result.recipientCount}
+              claimLinks={result.claimLinks}
+            />
           )}
 
           {step < 4 && (

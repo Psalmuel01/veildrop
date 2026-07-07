@@ -25,9 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 );
 Input.displayName = "Input";
 
-interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
-
-export function Label({ className, ...props }: LabelProps) {
+export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
       className={cn("text-xs font-medium uppercase tracking-wide text-ink-500", className)}

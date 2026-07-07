@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { Header } from "@/components/Header";
 import { LandingDemo } from "@/components/LandingDemo";
+import { PendingBanner } from "@/components/PendingBanner";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
 import { TEMPLATES } from "@/lib/templates";
@@ -13,7 +13,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Amounts stay sealed",
-    body: "Each allocation is encrypted before it ever touches the chain — pushed directly or claimed.",
+    body: "Each allocation is encrypted before it ever touches the chain, pushed directly or claimed.",
   },
   {
     title: "Only they can reveal",
@@ -23,9 +23,7 @@ const HOW_IT_WORKS = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper-100">
-      <Header />
-
+    <>
       {/* Hero */}
       <section className="relative overflow-hidden px-5 pb-20 pt-20 text-center sm:px-8 sm:pt-28">
         <div
@@ -44,6 +42,13 @@ export default function Home() {
         </span>
 
         <div className="relative mx-auto max-w-5xl">
+          {/*
+            Pending check is stubbed today (always empty) and runs silently
+            in the background. Once GET /api/recipients/pending exists, this
+            banner will surface real pending claims without changing layout.
+          */}
+          <PendingBanner />
+
           <div className="flex justify-center">
             <Eyebrow>Sepolia testnet</Eyebrow>
           </div>
@@ -53,12 +58,12 @@ export default function Home() {
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-balance text-lg text-ink-500">
             Distribute payroll, grants, and investor allocations on-chain with the amount encrypted
-            end to end — visible only to the recipient it belongs to.
+            end to end, visible only to the recipient it belongs to.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/distribute">
               <Button size="lg">
-                Create a distribution
+                Start distributing
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
@@ -75,7 +80,7 @@ export default function Home() {
       <section className="relative mx-auto max-w-3xl px-5 pb-24 sm:px-8">
         <div className="rounded-3xl border border-ink-900/10 bg-paper-50 px-8 py-14">
           <p className="mb-8 text-center text-sm font-medium text-ink-500">
-            This is what a recipient sees — try it
+            This is what a recipient sees, try it
           </p>
           <LandingDemo />
         </div>
@@ -91,13 +96,13 @@ export default function Home() {
           <Eyebrow>The problem</Eyebrow>
           <p className="mt-5 text-balance font-display text-3xl font-bold leading-snug text-ink-900 sm:text-4xl">
             Across 5,000+ token unlock events, prices dropped{" "}
-            <span className="text-accent-600">7–15%</span> within days of unlocks exceeding 1% of
-            circulating supply.
+            <span className="text-accent-600">7 to 15 percent</span> within days of unlocks exceeding
+            1 percent of circulating supply.
           </p>
           <p className="mt-6 max-w-2xl text-ink-500">
             Every distribution on a public blockchain is visible to every trader in real time.
-            When a large allocation lands, algorithms front-run it before it settles. Confidential
-            distribution keeps the transfer verifiable on-chain — but the amount unreadable to
+            When a large allocation lands, algorithms front run it before it settles. Confidential
+            distribution keeps the transfer verifiable on-chain, but the amount unreadable to
             anyone but the recipient.
           </p>
         </div>
@@ -164,7 +169,7 @@ export default function Home() {
           <div className="mt-8 flex justify-center">
             <Link href="/distribute">
               <Button size="lg">
-                Create a distribution
+                Start distributing
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
@@ -190,6 +195,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }

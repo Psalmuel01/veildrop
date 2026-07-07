@@ -27,7 +27,7 @@ function ErrorState({ title, message }: { title: string; message: string }) {
     <Card className="mx-auto max-w-md">
       <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
         <ShieldAlert className="size-8 text-error-600" />
-        <p className="font-display text-lg font-semibold text-ink-900">{title}</p>
+        <p className="font-display text-lg font-bold text-ink-900">{title}</p>
         <p className="text-sm text-ink-500">{message}</p>
       </CardContent>
     </Card>
@@ -36,7 +36,7 @@ function ErrorState({ title, message }: { title: string; message: string }) {
 
 /**
  * Every hook here (directly or via useDecryptedHandle) needs a live
- * ZamaProvider, which only mounts once the wallet is connected on Sepolia —
+ * ZamaProvider, which only mounts once the wallet is connected on Sepolia,
  * so this must only ever be rendered on that happy path, never at the top of
  * ClaimPortalContent (rules of hooks would still fire useZamaSDK internally
  * even inside a branch that isn't shown, since the component itself mounts).
@@ -89,7 +89,7 @@ function ClaimActions({ payload, tokenSymbol }: { payload: ClaimPayload; tokenSy
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "fhe-airdrop"] });
-          toast({ kind: "success", title: "Claimed — tokens are in your wallet" });
+          toast({ kind: "success", title: "Claimed. Tokens are in your wallet." });
         },
         onError: (err) => toast({ kind: "error", title: "Claim failed", description: err.message }),
       },
@@ -212,18 +212,16 @@ function ClaimPortalContent() {
 
 export default function ClaimPage() {
   return (
-    <div className="min-h-screen bg-paper-100">
-      <main className="px-5 py-16 sm:px-8">
-        <Suspense
-          fallback={
-            <div className="mx-auto max-w-lg">
-              <Skeleton className="h-96 w-full" />
-            </div>
-          }
-        >
-          <ClaimPortalContent />
-        </Suspense>
-      </main>
-    </div>
+    <main className="px-5 py-16 sm:px-8">
+      <Suspense
+        fallback={
+          <div className="mx-auto max-w-lg">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        }
+      >
+        <ClaimPortalContent />
+      </Suspense>
+    </main>
   );
 }

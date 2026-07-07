@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAccount } from "wagmi";
+import { sepolia } from "wagmi/chains";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Plus } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
+import { BalanceWidget } from "@/components/admin/BalanceWidget";
+import { MintModal } from "@/components/admin/MintModal";
+import { useIsZamaReady } from "@/app/providers";
 import { cn } from "@/lib/cn";
 
 const NAV_LINKS = [
@@ -14,9 +19,14 @@ const NAV_LINKS = [
   { href: "/faucet", label: "Faucet" },
 ];
 
-export function Header() {
+export function AdminHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mintOpen, setMintOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { chainId } = useAccount();
+  const isSepolia = chainId === sepolia.id;
+  const isZamaReady = useIsZamaReady();
+  const showBalanceControls = isSepolia && isZamaReady;
 
   useEffect(() => {
     function onScroll() {
@@ -55,6 +65,19 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {showBalanceControls && (
+            <div className="hidden items-center gap-2 sm:flex">
+              <BalanceWidget />
+              <button
+                onClick={() => setMintOpen(true)}
+                className="flex size-9 items-center justify-center rounded-full border border-ink-900/15 bg-paper-50 text-ink-700 transition-colors hover:border-accent-600/40 hover:text-accent-600"
+                aria-label="Mint test tokens"
+                title="Mint test tokens"
+              >
+                <Plus className="size-4" />
+              </button>
+            </div>
+          )}
           <WalletButton />
           <button
             onClick={() => setMenuOpen((o) => !o)}
@@ -86,10 +109,24 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
+              {showBalanceControls && (
+                <button
+                  onClick={() => {
+                    setMintOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-accent-600 hover:bg-ink-900/5"
+                >
+                  <Plus className="size-4" />
+                  Mint test tokens
+                </button>
+              )}
             </div>
           </motion.nav>
         )}
       </AnimatePresence>
+
+      <MintModal open={mintOpen} onClose={() => setMintOpen(false)} />
     </header>
   );
 }

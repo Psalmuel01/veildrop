@@ -6,7 +6,6 @@ import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { Check, Wallet, AlertTriangle } from "lucide-react";
 import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
-import { Header } from "@/components/Header";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -230,13 +229,16 @@ function DistributeWizard() {
 
 export default function DistributePage() {
   return (
-    <div className="min-h-screen bg-paper-100">
-      <Header />
-      <main className="px-5 py-16 sm:px-8">
-        <Suspense fallback={<div className="mx-auto max-w-3xl"><Skeleton className="h-96 w-full" /></div>}>
-          <DistributeWizard />
-        </Suspense>
-      </main>
-    </div>
+    <main className="px-5 py-16 sm:px-8">
+      <Suspense
+        fallback={
+          <div className="mx-auto max-w-3xl">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        }
+      >
+        <DistributeWizard />
+      </Suspense>
+    </main>
   );
 }

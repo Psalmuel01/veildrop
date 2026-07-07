@@ -9,7 +9,6 @@ import {
   useConfidentialBalance,
   useMintConfidential,
 } from "@tokenops/sdk/testnet-faucet/react";
-import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { WalletButton } from "@/components/WalletButton";
@@ -98,42 +97,39 @@ export default function FaucetPage() {
   const isZamaReady = useIsZamaReady();
 
   return (
-    <div className="min-h-screen bg-paper-100">
-      <Header />
-      <main className="mx-auto max-w-lg px-5 py-16 sm:px-8">
-        <div className="mb-8 text-center">
-          <h1 className="font-display text-3xl font-bold text-ink-900">
-            Faucet<span className="text-accent-600">.</span>
-          </h1>
-          <p className="mt-2 text-sm text-ink-500">Testnet-only. Never available on mainnet.</p>
-        </div>
+    <main className="mx-auto max-w-lg px-5 py-16 sm:px-8">
+      <div className="mb-8 text-center">
+        <h1 className="font-display text-3xl font-bold text-ink-900">
+          Faucet<span className="text-accent-600">.</span>
+        </h1>
+        <p className="mt-2 text-sm text-ink-500">Testnet only. Never available on mainnet.</p>
+      </div>
 
-        {!isConnected ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-              <Wallet className="size-8 text-ink-500" />
-              <p className="text-sm text-ink-700">Connect your wallet to mint test tokens.</p>
-              <WalletButton />
-            </CardContent>
-          </Card>
-        ) : !isSepolia ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-              <AlertTriangle className="size-8 text-error-600" />
-              <p className="text-sm text-ink-700">The faucet only runs on Sepolia testnet.</p>
-              <WalletButton />
-            </CardContent>
-          </Card>
-        ) : !isZamaReady ? (
-          <Card>
-            <CardContent className="py-12">
-              <Skeleton className="h-24 w-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <FaucetPanel />
-        )}
-      </main>
-    </div>
+      {!isConnected ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+            <Wallet className="size-8 text-ink-500" />
+            <p className="text-sm text-ink-700">Connect your wallet to mint test tokens.</p>
+            <WalletButton />
+          </CardContent>
+        </Card>
+      ) : !isSepolia ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+            <AlertTriangle className="size-8 text-error-600" />
+            <p className="text-sm text-ink-700">The faucet only runs on Sepolia testnet.</p>
+            <WalletButton />
+          </CardContent>
+        </Card>
+      ) : !isZamaReady ? (
+        <Card>
+          <CardContent className="py-12">
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
+      ) : (
+        <FaucetPanel />
+      )}
+    </main>
   );
 }

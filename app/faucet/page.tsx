@@ -10,7 +10,6 @@ import {
   useMintConfidential,
   useMintUnderlying,
 } from "@tokenops/sdk/testnet-faucet/react";
-import { useHasPermit, useGrantPermit, useDecryptValues } from "@zama-fhe/react-sdk";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -19,38 +18,24 @@ import { RevealAmount } from "@/components/RevealAmount";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { formatAmount } from "@/lib/amount";
+import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
 
 function BalanceReveal({ tokenAddress, symbol }: { tokenAddress: `0x${string}`; symbol: string }) {
   const { data: handle, isLoading: isLoadingHandle } = useConfidentialBalance();
-  const { data: hasPermit, isLoading: isCheckingPermit } = useHasPermit({
-    contractAddresses: [tokenAddress],
-  });
-  const grantPermit = useGrantPermit();
-  const decrypt = useDecryptValues(
-    handle ? [{ encryptedValue: handle, contractAddress: tokenAddress }] : [],
-    { enabled: false },
-  );
+  const { value, isLoading, isRevealing, isRevealed, reveal } = useDecryptedHandle(handle, tokenAddress);
 
-  if (isLoadingHandle || isCheckingPermit) {
+  if (isLoadingHandle || isLoading) {
     return <Skeleton className="mx-auto h-24 w-64" />;
   }
 
-  const status = decrypt.data ? "revealed" : decrypt.isFetching ? "decrypting" : "masked";
-  const value = handle && decrypt.data ? formatAmount(decrypt.data[handle] as bigint) : undefined;
-
-  async function handleDecrypt() {
-    if (!hasPermit) {
-      await grantPermit.mutateAsync([tokenAddress]);
-    }
-    decrypt.refetch();
-  }
+  const status = isRevealed ? "revealed" : isRevealing ? "decrypting" : "masked";
 
   return (
     <RevealAmount
       status={status}
-      value={value}
+      value={value !== undefined ? formatAmount(value) : undefined}
       symbol={symbol}
-      onDecrypt={handleDecrypt}
+      onDecrypt={reveal}
     />
   );
 }

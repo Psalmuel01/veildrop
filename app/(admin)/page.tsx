@@ -69,7 +69,8 @@ export default function Home() {
             </Link>
             <Link href="/docs">
               <Button size="lg" variant="secondary">
-                See docs
+                Read docs
+                {/* <BookOpen className="size-4" /> */}
               </Button>
             </Link>
           </div>

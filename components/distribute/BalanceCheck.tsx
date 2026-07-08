@@ -5,27 +5,61 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, AlertTriangle, ShieldQuestion } from "lucide-react";
 import { useConfidentialBalance, useMintConfidential } from "@tokenops/sdk/testnet-faucet/react";
 import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
+import { useMintVeilToken } from "@/lib/hooks/useMintVeilToken";
 import { formatAmount } from "@/lib/amount";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { getTokenConfig, getTokenConfigByAddress, VEIL_TOKEN } from "@/lib/tokens";
 import type { Address } from "viem";
+import { useAccount, useReadContract } from "wagmi";
 
 export function BalanceCheck({
   tokenAddress,
   tokenSymbol,
   requiredRaw,
   onResolved,
+  tokenId: explicitTokenId,
 }: {
   tokenAddress: Address;
   tokenSymbol: string;
   requiredRaw: bigint;
   onResolved?: (sufficient: boolean) => void;
+  tokenId?: string;
 }) {
+  const { address } = useAccount();
   const queryClient = useQueryClient();
   const { push: toast } = useToast();
-  const { data: handle } = useConfidentialBalance();
+  const { data: ctttHandle } = useConfidentialBalance();
+
+  const { data: veilHandle } = useReadContract({
+    address: VEIL_TOKEN.address,
+    abi: [
+      {
+        type: "function",
+        name: "confidentialBalanceOf",
+        inputs: [{ name: "account", type: "address" }],
+        outputs: [{ name: "", type: "bytes32" }],
+        stateMutability: "view",
+      },
+    ] as const,
+    functionName: "confidentialBalanceOf",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && tokenAddress.toLowerCase() === VEIL_TOKEN.address.toLowerCase(),
+    },
+  });
+
+  const isVctt = tokenAddress.toLowerCase() === VEIL_TOKEN.address.toLowerCase();
+  const handle = isVctt ? veilHandle : ctttHandle;
+
   const { value, isRevealing, isRevealed, reveal } = useDecryptedHandle(handle, tokenAddress);
-  const mint = useMintConfidential();
+  const mintCTTT = useMintConfidential();
+  const mintVeilToken = useMintVeilToken();
+
+  // Derive tokenId from address if not explicitly provided
+  const tokenIdFromAddress = getTokenConfigByAddress(tokenAddress)?.id || "veil";
+  const tokenId = explicitTokenId || tokenIdFromAddress;
+  const selectedToken = getTokenConfig(tokenId);
 
   const sufficient = value !== undefined && value >= requiredRaw;
 
@@ -56,6 +90,33 @@ export function BalanceCheck({
     );
   }
 
+  const handleMintVeil = () => {
+    mintVeilToken.mint(1_000_000_000n).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "testnet-faucet"] });
+      toast({ kind: "success", title: `Minted 1,000 ${selectedToken.symbol}` });
+      reveal();
+    }).catch((err) => {
+      toast({ kind: "error", title: "Mint failed", description: err.message });
+    });
+  };
+
+  const handleMintCTTT = () => {
+    mintCTTT.mutate(
+      { amount: 1_000_000_000n },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "testnet-faucet"] });
+          toast({ kind: "success", title: "Minted 1,000 CTTT" });
+          reveal();
+        },
+        onError: (err) => toast({ kind: "error", title: "Mint failed", description: err.message }),
+      },
+    );
+  };
+
+  const isPending = selectedToken.id === "veil" ? mintVeilToken.isPending : mintCTTT.isPending;
+  const handleMint = selectedToken.id === "veil" ? handleMintVeil : handleMintCTTT;
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-error-600/25 bg-error-100 px-4 py-3 text-sm text-error-700 sm:flex-row sm:items-center sm:justify-between">
       <span className="flex items-center gap-2">
@@ -64,20 +125,8 @@ export function BalanceCheck({
       </span>
       <Button
         size="sm"
-        onClick={() =>
-          mint.mutate(
-            { amount: 1_000_000_000n },
-            {
-              onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "testnet-faucet"] });
-                toast({ kind: "success", title: "Minted 1,000 CTTT" });
-                reveal();
-              },
-              onError: (err) => toast({ kind: "error", title: "Mint failed", description: err.message }),
-            },
-          )
-        }
-        isLoading={mint.isPending}
+        onClick={handleMint}
+        isLoading={isPending}
       >
         Mint 1,000 {tokenSymbol}
       </Button>

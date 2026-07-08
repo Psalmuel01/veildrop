@@ -1,6 +1,7 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 
@@ -16,6 +17,7 @@ export function StepTemplate({
   onModeChange: (mode: DistributionMode) => void;
 }) {
   const template = TEMPLATES.find((t) => t.id === selectedId);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,37 +61,45 @@ export function StepTemplate({
       </div>
 
       {template && (
-        <details className="group rounded-lg border border-ink-900/[0.07] px-4 py-3 open:bg-paper-100/60">
-          <summary className="cursor-pointer text-sm font-medium text-ink-700 marker:content-none">
+        <div className="rounded-lg border border-ink-900/[0.07] bg-paper-50">
+          <button
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+            className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-ink-700 hover:bg-paper-100 hover:rounded-t-lg transition-colors"
+          >
             Advanced: distribution mechanism
-          </summary>
-          <div className="mt-3 flex flex-col gap-2 text-sm">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={mode === "disperse"}
-                onChange={() => onModeChange("disperse")}
-                className="accent-accent-600"
-              />
-              <span>
-                <span className="font-medium text-ink-900">Disperse</span>{" "}
-                <span className="text-ink-500">Pushed directly to each wallet, one transaction.</span>
-              </span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={mode === "airdrop"}
-                onChange={() => onModeChange("airdrop")}
-                className="accent-accent-600"
-              />
-              <span>
-                <span className="font-medium text-ink-900">Airdrop</span>{" "}
-                <span className="text-ink-500">Recipients claim on their own schedule via a link.</span>
-              </span>
-            </label>
-          </div>
-        </details>
+            <ChevronDown
+              className={cn("size-4 transition-transform duration-200", advancedOpen && "rotate-180")}
+            />
+          </button>
+          {advancedOpen && (
+            <div className="border-t border-ink-900/[0.05] px-4 py-3 flex flex-col gap-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={mode === "disperse"}
+                  onChange={() => onModeChange("disperse")}
+                  className="size-4 accent-accent-600 cursor-pointer"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="font-medium text-ink-900">Disperse</span>
+                  <span className="text-xs text-ink-500">Pushed directly to each wallet, one transaction.</span>
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={mode === "airdrop"}
+                  onChange={() => onModeChange("airdrop")}
+                  className="size-4 accent-accent-600 cursor-pointer"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="font-medium text-ink-900">Airdrop</span>
+                  <span className="text-xs text-ink-500">Recipients claim on their own schedule via a link.</span>
+                </span>
+              </label>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

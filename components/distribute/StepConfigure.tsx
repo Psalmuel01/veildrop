@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
-import { Coins, ArrowUpRight } from "lucide-react";
+import { Coins, ArrowUpRight, Check } from "lucide-react";
 import { Input, Label } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { SUPPORTED_TOKENS } from "@/lib/tokens";
 import type { DistributionMode } from "@/lib/templates";
 
 export interface DistributionConfig {
@@ -24,44 +25,50 @@ export function StepConfigure({
   mode,
   config,
   onChange,
+  selectedTokenId,
+  onTokenChange,
 }: {
   mode: DistributionMode;
   config: DistributionConfig;
   onChange: (config: DistributionConfig) => void;
+  selectedTokenId: string;
+  onTokenChange: (tokenId: string) => void;
 }) {
-  const { data: meta, isLoading } = useFaucetMetadata();
-
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="font-display text-2xl font-bold text-ink-900">Configure the distribution</h2>
-        <p className="mt-1 text-sm text-ink-500">Name it, and confirm the token you&apos;re sending.</p>
+        <p className="mt-1 text-sm text-ink-500">Select your token, name the distribution, and set details.</p>
       </div>
 
       <div>
         <Label>Token</Label>
-        {isLoading || !meta ? (
-          <Skeleton className="mt-2 h-14 w-full" />
-        ) : (
-          <div className="mt-2 flex items-center justify-between rounded-lg border border-ink-900/[0.06] bg-paper-100 px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-accent-100 text-accent-700">
-                <Coins className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-ink-900">{meta.confidential.symbol}</p>
-                <p className="font-mono text-xs text-ink-500">{meta.confidential.address}</p>
-              </div>
-            </div>
-            <Link
-              href="/faucet"
-              className="flex items-center gap-1 text-xs font-medium text-accent-600 hover:text-accent-700"
+        <div className="mt-2 flex flex-col gap-2">
+          {SUPPORTED_TOKENS.map((token) => (
+            <button
+              key={token.id}
+              onClick={() => onTokenChange(token.id)}
+              className={`rounded-lg border-2 px-4 py-3 text-left transition-colors ${selectedTokenId === token.id
+                  ? "border-accent-600 bg-accent-50"
+                  : "border-ink-900/[0.06] bg-paper-100 hover:border-accent-600/40"
+                }`}
             >
-              Mint more
-              <ArrowUpRight className="size-3" />
-            </Link>
-          </div>
-        )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-accent-100 text-accent-700">
+                    <Coins className="size-4" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-ink-900">{token.symbol}</p>
+                    <p className="text-xs text-ink-500">{token.name}</p>
+                  </div>
+                </div>
+                {selectedTokenId === token.id && <Check className="size-5 text-accent-600" />}
+              </div>
+              <p className="mt-2 text-xs text-ink-500">{token.description}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div>

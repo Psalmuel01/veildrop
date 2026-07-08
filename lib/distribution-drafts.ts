@@ -8,6 +8,7 @@ export interface DistributionDraft {
   step: number;
   templateId: string;
   mode: DistributionMode;
+  selectedTokenId: string;
   config: DistributionConfig;
   recipients: RecipientRow[];
   updatedAt: number;

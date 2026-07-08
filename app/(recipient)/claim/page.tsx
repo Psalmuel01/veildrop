@@ -7,7 +7,7 @@ import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { ShieldCheck, ShieldAlert, CheckCircle2, ExternalLink, Wallet, AlertTriangle } from "lucide-react";
 import type { Hex } from "viem";
-import { useClaim, useGetClaimAmount, useAirdropIsSignatureClaimed } from "@tokenops/sdk/fhe-airdrop/react";
+import { useClaim, useGetClaimAmount, useAirdropIsSignatureClaimed, useAirdropToken } from "@tokenops/sdk/fhe-airdrop/react";
 import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -19,6 +19,7 @@ import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
 import { useIsZamaReady } from "@/app/providers";
 import { decodeClaimPayload, type ClaimPayload } from "@/lib/claim-link";
 import { formatAmount } from "@/lib/amount";
+import { getTokenConfigByAddress } from "@/lib/tokens";
 
 const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io/tx/";
 
@@ -41,10 +42,14 @@ function ErrorState({ title, message }: { title: string; message: string }) {
  * ClaimPortalContent (rules of hooks would still fire useZamaSDK internally
  * even inside a branch that isn't shown, since the component itself mounts).
  */
-function ClaimActions({ payload, tokenSymbol }: { payload: ClaimPayload; tokenSymbol: string }) {
+function ClaimActions({ payload }: { payload: ClaimPayload }) {
   const { push: toast } = useToast();
   const queryClient = useQueryClient();
   const [viewHandle, setViewHandle] = useState<Hex | undefined>();
+
+  const { data: tokenAddress } = useAirdropToken({ address: payload.airdrop });
+  const tokenConfig = tokenAddress ? getTokenConfigByAddress(tokenAddress) : undefined;
+  const tokenSymbol = tokenConfig?.symbol ?? "CTTT";
 
   const { data: isClaimed, isLoading: isCheckingClaimed } = useAirdropIsSignatureClaimed({
     address: payload.airdrop,
@@ -202,7 +207,7 @@ function ClaimPortalContent() {
           ) : !isZamaReady ? (
             <Skeleton className="h-72 w-full" />
           ) : (
-            <ClaimActions payload={payload} tokenSymbol={meta?.confidential.symbol ?? "CTTT"} />
+            <ClaimActions payload={payload} />
           )}
         </CardContent>
       </Card>

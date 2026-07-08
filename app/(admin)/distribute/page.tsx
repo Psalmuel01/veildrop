@@ -20,6 +20,7 @@ import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
 import { saveDistribution } from "@/lib/distributions";
 import { clearDistributionDraft, loadDistributionDraft, saveDistributionDraft } from "@/lib/distribution-drafts";
+import { VEIL_TOKEN, CTTT_TOKEN, getTokenConfig } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
@@ -69,6 +70,7 @@ function DistributeWizard() {
   const [step, setStep] = useState(0);
   const [templateId, setTemplateId] = useState(initialTemplate.id);
   const [mode, setMode] = useState<DistributionMode>(initialTemplate.defaultMode);
+  const [selectedTokenId, setSelectedTokenId] = useState<string>("veil");
   const [config, setConfig] = useState<DistributionConfig>({
     title: initialTemplate.copy.title,
     description: "",
@@ -81,6 +83,7 @@ function DistributeWizard() {
   const [draftStatus, setDraftStatus] = useState<"idle" | "saved">("idle");
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
+  const selectedToken = getTokenConfig(selectedTokenId);
   const summary = summarizeRecipients(recipients);
   const validRecipients = recipients.filter((r) => r.isValidAddress && r.isValidAmount && !r.isDuplicate);
 
@@ -91,6 +94,7 @@ function DistributeWizard() {
     setStep(Math.min(draft.step, 3));
     setTemplateId(TEMPLATES.some((t) => t.id === draft.templateId) ? draft.templateId : TEMPLATES[0]!.id);
     setMode(draft.mode);
+    setSelectedTokenId(draft.selectedTokenId || "veil");
     setConfig(draft.config);
     setRecipients(draft.recipients);
     setDraftLoadedAt(draft.updatedAt);
@@ -102,6 +106,7 @@ function DistributeWizard() {
       step,
       templateId,
       mode,
+      selectedTokenId,
       config,
       recipients,
       updatedAt: Date.now(),
@@ -109,7 +114,7 @@ function DistributeWizard() {
     setDraftStatus("saved");
     const timeout = window.setTimeout(() => setDraftStatus("idle"), 1800);
     return () => window.clearTimeout(timeout);
-  }, [address, step, templateId, mode, config, recipients, result]);
+  }, [address, step, templateId, mode, selectedTokenId, config, recipients, result]);
 
   function discardDraft() {
     if (address) clearDistributionDraft(address);
@@ -117,6 +122,7 @@ function DistributeWizard() {
     setStep(0);
     setTemplateId(initial.id);
     setMode(initial.defaultMode);
+    setSelectedTokenId("veil");
     setConfig({ title: initial.copy.title, description: "", claimStart: "", claimEnd: "" });
     setRecipients([]);
     setResult(null);
@@ -131,8 +137,8 @@ function DistributeWizard() {
         mode: "disperse",
         templateId,
         title: config.title || template.copy.title,
-        token: meta?.confidential.address ?? "",
-        tokenSymbol: meta?.confidential.symbol ?? "CTTT",
+        token: selectedToken.address,
+        tokenSymbol: selectedToken.symbol,
         recipientCount: validRecipients.length,
         createdAt: Date.now(),
         txHash,
@@ -151,8 +157,8 @@ function DistributeWizard() {
         mode: "airdrop",
         templateId,
         title: config.title || template.copy.title,
-        token: meta?.confidential.address ?? "",
-        tokenSymbol: meta?.confidential.symbol ?? "CTTT",
+        token: selectedToken.address,
+        tokenSymbol: selectedToken.symbol,
         recipientCount: validRecipients.length,
         createdAt: Date.now(),
         txHash: airdropResult.txHash,
@@ -233,30 +239,38 @@ function DistributeWizard() {
               onModeChange={setMode}
             />
           )}
-          {step === 1 && <StepConfigure mode={mode} config={config} onChange={setConfig} />}
+          {step === 1 && (
+            <StepConfigure
+              mode={mode}
+              config={config}
+              onChange={setConfig}
+              selectedTokenId={selectedTokenId}
+              onTokenChange={setSelectedTokenId}
+            />
+          )}
           {step === 2 && (
             <StepRecipients
               rows={recipients}
               onChange={setRecipients}
-              tokenSymbol={meta?.confidential.symbol ?? "CTTT"}
+              tokenSymbol={selectedToken.symbol}
               recipientLabel={template.copy.recipientLabel}
             />
           )}
           {step === 3 &&
-            (isLoadingMeta || !meta || !isZamaReady ? (
+            (isLoadingMeta || !isZamaReady ? (
               <Skeleton className="h-64 w-full" />
             ) : mode === "disperse" ? (
               <StepReviewDisperse
                 recipients={validRecipients}
-                tokenAddress={meta.confidential.address}
-                tokenSymbol={meta.confidential.symbol}
+                tokenAddress={selectedToken.address}
+                tokenSymbol={selectedToken.symbol}
                 onSuccess={handleDisperseSuccess}
               />
             ) : (
               <StepReviewAirdrop
                 recipients={validRecipients}
-                tokenAddress={meta.confidential.address}
-                tokenSymbol={meta.confidential.symbol}
+                tokenAddress={selectedToken.address}
+                tokenSymbol={selectedToken.symbol}
                 config={config}
                 onSuccess={handleAirdropSuccess}
               />

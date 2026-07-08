@@ -8,7 +8,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Plus, BookOpen } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { BalanceWidget } from "@/components/admin/BalanceWidget";
-import { MintModal } from "@/components/admin/MintModal";
 import { useIsZamaReady } from "@/app/providers";
 import { cn } from "@/lib/cn";
 
@@ -20,7 +19,6 @@ const NAV_LINKS = [
 
 export function AdminHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mintOpen, setMintOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
@@ -51,49 +49,45 @@ export function AdminHeader() {
           <span className="text-lg font-bold text-accent-600">.</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 sm:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-900/5 hover:text-ink-900"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          {showBalanceControls && (
-            <div className="hidden items-center gap-2 sm:flex">
-              <BalanceWidget />
-              {/* <button
-                onClick={() => setMintOpen(true)}
-                className="flex size-9 items-center justify-center rounded-full border border-ink-900/[0.1] bg-paper-50 text-ink-700 transition-colors hover:border-accent-600/40 hover:text-accent-600"
-                aria-label="Mint test tokens"
-                title="Mint test tokens"
+        <div className="flex items-center gap-6">
+          <nav className="hidden items-center gap-1 sm:flex">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-900/5 hover:text-ink-900"
               >
-                <Plus className="size-4" />
-              </button> */}
-            </div>
-          )}
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
           <Link
             href="/docs"
             className="hidden h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 sm:flex"
             aria-label="Documentation"
             title="Documentation"
           >
-            <BookOpen className="size-4" />
             Docs
+            <BookOpen className="size-4" />
           </Link>
-          <WalletButton />
-          <button
-            onClick={() => setMenuOpen((o) => !o)}
-            className="flex size-9 items-center justify-center rounded-full text-ink-700 hover:bg-ink-900/5 sm:hidden"
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
+
+          <div className="flex items-center gap-2">
+            {showBalanceControls && (
+              <div className="hidden items-center gap-2 sm:flex">
+                <BalanceWidget />
+              </div>
+            )}
+
+            <WalletButton />
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="flex size-9 items-center justify-center rounded-full text-ink-700 hover:bg-ink-900/5 sm:hidden"
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -117,18 +111,6 @@ export function AdminHeader() {
                   {link.label}
                 </Link>
               ))}
-              {showBalanceControls && (
-                <button
-                  onClick={() => {
-                    setMintOpen(true);
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-accent-600 hover:bg-ink-900/5"
-                >
-                  <Plus className="size-4" />
-                  Mint test tokens
-                </button>
-              )}
               <div className="my-1 border-t border-ink-900/[0.05]" />
               <Link
                 href="/docs"
@@ -143,7 +125,7 @@ export function AdminHeader() {
         )}
       </AnimatePresence>
 
-      <MintModal open={mintOpen} onClose={() => setMintOpen(false)} />
+
     </header>
   );
 }

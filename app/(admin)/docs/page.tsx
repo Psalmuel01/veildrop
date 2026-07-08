@@ -49,7 +49,7 @@ export default function DocsPage() {
           href="/faucet"
           className="mt-4 flex items-center gap-1 rounded-full border border-ink-900/[0.06] px-3.5 py-1.5 text-sm font-medium text-accent-600 hover:border-accent-600/40"
         >
-          Get testnet CTTT
+          Get testnet tokens
           <ArrowUpRight className="size-3.5" />
         </Link>
       </nav>

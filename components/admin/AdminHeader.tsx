@@ -20,7 +20,7 @@ const NAV_LINKS = [
 export function AdminHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { chainId } = useAccount();
+  const { chainId, isConnected } = useAccount();
   const isSepolia = chainId === sepolia.id;
   const isZamaReady = useIsZamaReady();
   const showBalanceControls = isSepolia && isZamaReady;
@@ -50,17 +50,19 @@ export function AdminHeader() {
         </Link>
 
         <div className="flex items-center gap-6">
-          <nav className="hidden items-center gap-1 sm:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-900/5 hover:text-ink-900"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          {isConnected && (
+            <nav className="hidden items-center gap-1 sm:flex">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-900/5 hover:text-ink-900"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          )}
 
           <Link
             href="/docs"
@@ -101,7 +103,7 @@ export function AdminHeader() {
             className="overflow-hidden border-t border-ink-900/[0.05] bg-paper-100/95 backdrop-blur-md sm:hidden"
           >
             <div className="flex flex-col gap-1 px-5 py-3">
-              {NAV_LINKS.map((link) => (
+              {isConnected && NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -120,6 +122,7 @@ export function AdminHeader() {
                 <BookOpen className="size-4" />
                 Docs
               </Link>
+            </div>
             </div>
           </motion.nav>
         )}

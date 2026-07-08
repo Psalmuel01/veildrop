@@ -173,26 +173,6 @@ export default function DashboardPage() {
             <StatCard label="Complete" value={completedDrops} detail="No admin action needed" icon={CheckCircle2} />
           </div>
 
-          <Card>
-            <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
-                <ShieldCheck className="size-5" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-ink-900">Privacy boundary</p>
-                <p className="mt-1 text-sm text-ink-500">
-                  You can track recipients, transactions, and claim status here. Plaintext allocation amounts remain sealed.
-                </p>
-              </div>
-              <Link href="/docs">
-                <Button variant="secondary" size="sm">
-                  Docs
-                  <ArrowUpRight className="size-3.5" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-ink-900">Active distribution audits</h2>

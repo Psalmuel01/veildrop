@@ -83,7 +83,7 @@ export function StepConfigure({
           onChange={(e) => onChange({ ...config, description: e.target.value })}
           rows={3}
           className="mt-2 w-full rounded-lg border border-ink-900/[0.08] bg-paper-50 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-500/70 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/40"
-          placeholder="Internal note — recipients never see this."
+          placeholder="Internal note. Recipients never see this."
         />
       </div>
 

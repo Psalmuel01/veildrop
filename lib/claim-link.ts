@@ -7,7 +7,7 @@ export interface ClaimPayload {
 }
 
 // This page is server-rendered first (Next.js SSR of "use client" pages),
-// where `window` doesn't exist — base64 (de)coding must work in both Node
+// where `window` doesn't exist. Base64 (de)coding must work in both Node
 // and the browser rather than reaching for window.btoa/atob directly.
 function toBase64(input: string): string {
   if (typeof window !== "undefined") return window.btoa(input);

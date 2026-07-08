@@ -171,7 +171,7 @@ export function RecipientsTable({
 
         {rows.length === 0 && (
           <div className="px-4 py-10 text-center text-sm text-ink-500">
-            No {recipientLabel.toLowerCase()}s yet — upload a CSV or add one below.
+            No {recipientLabel.toLowerCase()}s yet. Upload a CSV or add one below.
           </div>
         )}
         {rows.length > 0 && visibleRows.length === 0 && (

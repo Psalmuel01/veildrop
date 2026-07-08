@@ -11,7 +11,7 @@ export const sepoliaFheChain = {
 
 /**
  * Built per-connection (not once at module scope) because ZamaConfigViem
- * requires a live walletClient — the signer must be rebuilt whenever the
+ * requires a live walletClient. The signer must be rebuilt whenever the
  * connected account or chain changes, or the relayer signs with a stale key.
  */
 export function buildZamaConfig(publicClient: PublicClient, walletClient: WalletClient) {

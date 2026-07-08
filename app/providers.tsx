@@ -14,7 +14,7 @@ const ZamaReadyContext = createContext(false);
 /**
  * True only once <ZamaProvider> is actually mounted below. Components that
  * call Zama hooks (useZamaSDK, useHasPermit, useDecryptValues, ...) must gate
- * on this — not on `isConnected && chainId === sepolia.id` from their own
+ * on this, not on `isConnected && chainId === sepolia.id` from their own
  * useAccount() call, which can be true a render or two before walletClient
  * (and therefore ZamaProvider) is ready, throwing "must be used within a
  * ZamaProvider".

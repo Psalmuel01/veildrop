@@ -15,8 +15,13 @@ const SECTIONS = [
   { id: "modes", label: "Disperse vs Airdrop" },
   { id: "creating", label: "Creating a distribution" },
   { id: "claiming", label: "Claiming an allocation" },
+  { id: "tokens", label: "Supported tokens" },
   { id: "faq", label: "FAQ" },
 ];
+
+const VEIL_TOKEN_ADDRESS = "0x1c20CeC11BbfDB19f88450569Ed7a98A7a670A42";
+const VEIL_TOKEN_SOURCE_URL = "https://github.com/Psalmuel01/veildrop/blob/main/contracts/contracts/VeilToken.sol";
+const VEIL_TOKEN_ETHERSCAN_URL = `https://sepolia.etherscan.io/address/${VEIL_TOKEN_ADDRESS}`;
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
@@ -82,8 +87,8 @@ export default function DocsPage() {
               className="text-accent-600 hover:underline"
             >
               TokenOps SDK
-            </a>
-            , built on{" "}
+            </a>{" "}
+            and is built on{" "}
             <a
               href="https://www.zama.org"
               target="_blank"
@@ -217,6 +222,46 @@ export default function DocsPage() {
             <Lock className="mt-0.5 size-4 shrink-0 text-accent-600" />
             Decrypting only reveals the amount to you, in your browser. It&apos;s never sent anywhere
             readable by VeilDrop or anyone else.
+          </p>
+        </Section>
+
+        <Section id="tokens" title="Supported tokens">
+          <p>
+            VeilDrop supports two Sepolia confidential test tokens. The primary branded option is
+            <strong className="text-ink-900"> VeilDrop Confidential Token</strong>, symbol{" "}
+            <strong className="text-ink-900">vCTT</strong>. It is an ERC-7984 confidential token
+            deployed from this repository for the VeilDrop project.
+          </p>
+          <p>
+            TokenOps&apos; <strong className="text-ink-900">CTTT</strong> remains supported as a
+            fallback for general testing, especially for users already familiar with the TokenOps
+            ecosystem. Both tokens work with the same Disperse and Airdrop flows because the SDK
+            accepts any compatible ERC-7984 token address.
+          </p>
+          <div className="grid gap-3 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4 text-sm sm:grid-cols-2">
+            <a
+              href={VEIL_TOKEN_SOURCE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-3 rounded-lg border border-ink-900/[0.06] px-3 py-2 text-accent-600 hover:border-accent-600/40"
+            >
+              <span>View VeilToken.sol</span>
+              <ArrowUpRight className="size-3.5" />
+            </a>
+            <a
+              href={VEIL_TOKEN_ETHERSCAN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-3 rounded-lg border border-ink-900/[0.06] px-3 py-2 text-accent-600 hover:border-accent-600/40"
+            >
+              <span>View vCTT on Sepolia Etherscan</span>
+              <ArrowUpRight className="size-3.5" />
+            </a>
+          </div>
+          <p className="text-sm text-ink-500">
+            vCTT demonstrates full smart contract ownership for VeilDrop. CTTT stays available as a
+            familiar TokenOps test token. Keeping both options makes the demo useful for reviewers
+            and for anyone testing against the broader TokenOps ecosystem.
           </p>
         </Section>
 

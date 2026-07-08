@@ -5,7 +5,7 @@ import { useHasPermit, useGrantPermit, useDecryptValues } from "@zama-fhe/react-
 
 /**
  * Permit-gated reveal of a single encrypted `euint64` handle. Decryption
- * requires an EIP-712 permit for the contract the handle belongs to — grant
+ * requires an EIP-712 permit for the contract the handle belongs to. Grant
  * it lazily on first reveal rather than eagerly, so connecting a wallet never
  * triggers an unsolicited signature prompt.
  */

@@ -19,8 +19,8 @@ function makeId() {
 function validateAddress(address: string): boolean {
   const trimmed = address.trim();
   if (!isAddress(trimmed, { strict: false })) return false;
-  // Reject mixed-case addresses whose case doesn't match the EIP-55 checksum —
-  // usually a copy/paste typo rather than an intentional all-lowercase address.
+  // Reject mixed-case addresses whose case doesn't match the EIP-55 checksum.
+  // This is usually a copy/paste typo rather than an intentional all-lowercase address.
   const isAllLower = trimmed === trimmed.toLowerCase();
   const isAllUpper = trimmed === trimmed.toUpperCase();
   if (isAllLower || isAllUpper) return true;

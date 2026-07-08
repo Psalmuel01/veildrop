@@ -22,7 +22,7 @@ export function StepTemplate({
       <div>
         <h2 className="font-display text-2xl font-bold text-ink-900">What are you distributing?</h2>
         <p className="mt-1 text-sm text-ink-500">
-          Pick the closest fit — you can fine-tune everything after.
+          Pick the closest fit. You can fine-tune everything after.
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export function StepTemplate({
               />
               <span>
                 <span className="font-medium text-ink-900">Disperse</span>{" "}
-                <span className="text-ink-500">— pushed directly to each wallet, one transaction.</span>
+                <span className="text-ink-500">Pushed directly to each wallet, one transaction.</span>
               </span>
             </label>
             <label className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export function StepTemplate({
               />
               <span>
                 <span className="font-medium text-ink-900">Airdrop</span>{" "}
-                <span className="text-ink-500">— recipients claim on their own schedule via a link.</span>
+                <span className="text-ink-500">Recipients claim on their own schedule via a link.</span>
               </span>
             </label>
           </div>

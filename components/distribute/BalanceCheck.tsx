@@ -51,7 +51,7 @@ export function BalanceCheck({
     return (
       <div className="flex items-center gap-2 rounded-lg border border-success-600/25 bg-success-100 px-4 py-3 text-sm text-success-700">
         <CheckCircle2 className="size-4" />
-        Balance covers this distribution — {formatAmount(value!)} {tokenSymbol} available.
+        Balance covers this distribution. {formatAmount(value!)} {tokenSymbol} available.
       </div>
     );
   }
@@ -60,7 +60,7 @@ export function BalanceCheck({
     <div className="flex flex-col gap-3 rounded-lg border border-error-600/25 bg-error-100 px-4 py-3 text-sm text-error-700 sm:flex-row sm:items-center sm:justify-between">
       <span className="flex items-center gap-2">
         <AlertTriangle className="size-4" />
-        Only {formatAmount(value!)} {tokenSymbol} available — you need confidential test tokens.
+        Only {formatAmount(value!)} {tokenSymbol} available. You need confidential test tokens.
       </span>
       <Button
         size="sm"

@@ -38,7 +38,7 @@ export default function OpengraphImage() {
           Every unlock is public. Yours doesn&apos;t have to be.
         </div>
         <div style={{ display: "flex", fontSize: 26, color: "#6B939A", marginTop: 28 }}>
-          Confidential token distribution — amounts encrypted end to end.
+          Confidential token distribution with amounts encrypted end to end.
         </div>
       </div>
     ),

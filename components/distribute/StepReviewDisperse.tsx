@@ -68,7 +68,7 @@ export function StepReviewDisperse({
   const approve = useApproveTokenOnWallets();
 
   // Wallet-mode disperse pulls the total from the admin's own balance into
-  // their subwallets before fanning out to recipients — that first leg needs
+  // their subwallets before fanning out to recipients. That first leg needs
   // the singleton approved as operator on the admin's balance directly, or
   // the tx reverts with ERC7984UnauthorizedSpender(holder, spender).
   const singletonAddress = chainId ? getFheDisperseSingletonAddress(chainId) : undefined;
@@ -151,7 +151,7 @@ export function StepReviewDisperse({
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="font-display text-2xl font-bold text-ink-900">Review & execute</h2>
-        <p className="mt-1 text-sm text-ink-500">Tokens are pushed directly — no claim step for recipients.</p>
+        <p className="mt-1 text-sm text-ink-500">Tokens are pushed directly. No claim step for recipients.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 rounded-xl bg-paper-100 p-4 sm:grid-cols-4">

@@ -39,7 +39,7 @@ export function CsvUploader({ onParsed }: { onParsed: (csvText: string) => void 
         <p className="text-sm font-medium text-ink-900">
           {isDragActive ? "Drop the CSV here" : "Drag a CSV, or click to browse"}
         </p>
-        <p className="mt-1 font-mono text-xs text-ink-500">address,amount — one per line</p>
+        <p className="mt-1 font-mono text-xs text-ink-500">address,amount on each line</p>
       </div>
     </div>
   );

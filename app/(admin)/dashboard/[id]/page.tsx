@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { ArrowLeft, ExternalLink, Wallet, AlertTriangle, CheckCircle2, Activity, ShieldCheck, Clock3 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Wallet, AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
@@ -109,7 +109,7 @@ export default function DistributionDetailPage() {
             </CardContent>
           </Card>
 
-          <div className="mb-4 grid gap-4 md:grid-cols-2">
+          {/* <div className="mb-4 grid gap-4 md:grid-cols-2">
             <Card>
               <CardContent className="flex gap-3 py-5">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
@@ -117,7 +117,7 @@ export default function DistributionDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-ink-900">Administrator visibility</p>
-                  <p className="mt-1 text-sm text-ink-500">
+                  <p className="mt-1 text-xs text-ink-500">
                     Recipient addresses, claim links, and claim state are inspectable. Plaintext token amounts are not.
                   </p>
                 </div>
@@ -130,7 +130,7 @@ export default function DistributionDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-ink-900">Operational status</p>
-                  <p className="mt-1 text-sm text-ink-500">
+                  <p className="mt-1 text-xs text-ink-500">
                     {distribution.mode === "airdrop"
                       ? "Recipients claim on their own schedule. This page checks claim status from the connected wallet context."
                       : "Tokens were pushed directly. Recipients do not need to take a claim action."}
@@ -138,7 +138,7 @@ export default function DistributionDetailPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           <Card>
             <CardHeader>

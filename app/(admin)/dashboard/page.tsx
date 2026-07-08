@@ -19,7 +19,6 @@ import {
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { EncryptedBadge } from "@/components/EncryptedBadge";
 import { loadDistributions, type StoredDistribution } from "@/lib/distributions";
 
 function timeAgo(ts: number): string {
@@ -55,45 +54,6 @@ function StatCard({
       <p className="font-display text-2xl font-bold text-ink-900">{value}</p>
       <p className="mt-1 text-xs text-ink-500">{detail}</p>
     </div>
-  );
-}
-
-function DistributionCard({ distribution }: { distribution: StoredDistribution }) {
-  const Icon = distribution.mode === "disperse" ? Send : Gift;
-  const claimed = claimedTotal(distribution);
-  const pending = Math.max(distribution.recipientCount - claimed, 0);
-  const progress = distribution.recipientCount > 0 ? (claimed / distribution.recipientCount) * 100 : 0;
-
-  return (
-    <Link
-      href={`/dashboard/${distribution.id}`}
-      className="grid gap-4 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)] sm:grid-cols-[1fr_auto]"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-ink-900/5 text-ink-700">
-          <Icon className="size-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="font-display text-base font-bold text-ink-900">{distribution.title}</p>
-          <p className="text-xs text-ink-500">
-            {distribution.recipientCount} recipients, {distribution.mode}, {timeAgo(distribution.createdAt)}
-          </p>
-        </div>
-      </div>
-      <div className="flex min-w-[11rem] flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <EncryptedBadge />
-          <span className="text-xs font-medium text-ink-500">
-            {distribution.mode === "airdrop" ? `${pending} pending` : "Delivered"}
-          </span>
-        </div>
-        {distribution.mode === "airdrop" && (
-          <div className="h-1.5 overflow-hidden rounded-full bg-ink-900/10">
-            <div className="h-full rounded-full bg-success-600" style={{ width: `${progress}%` }} />
-          </div>
-        )}
-      </div>
-    </Link>
   );
 }
 
@@ -172,31 +132,56 @@ export default function DashboardPage() {
             <StatCard label="Complete" value={completedDrops} detail="No admin action needed" icon={CheckCircle2} />
           </div>
 
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-ink-900">Active distribution audits</h2>
-              <Link href="/distribute" className="text-xs font-medium text-accent-600 hover:text-accent-700">
-                New distribution
-              </Link>
-            </div>
-            <div className="flex flex-col gap-3">
-              {distributions.map((d) => (
-                <DistributionCard key={d.id} distribution={d} />
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4">
-            <h2 className="text-sm font-semibold text-ink-900">Recent activity</h2>
-            <div className="mt-3 flex flex-col gap-2">
-              {distributions.slice(0, 4).map((distribution) => (
-                <div key={distribution.id} className="flex items-center justify-between gap-3 text-xs">
-                  <span className="min-w-0 truncate text-ink-500">
-                    Created <span className="text-ink-900">{distribution.title}</span>
-                  </span>
-                  <span className="shrink-0 font-mono text-ink-500">{timeAgo(distribution.createdAt)}</span>
-                </div>
-              ))}
+          <div className="rounded-xl border border-ink-900/[0.06] bg-paper-50 p-5">
+            <h2 className="mb-4 text-sm font-semibold text-ink-900">Recent drops</h2>
+            <div className="flex flex-col gap-2.5">
+              {distributions.slice(0, 5).map((distribution) => {
+                const Icon = distribution.mode === "disperse" ? Send : Gift;
+                const claimed = claimedTotal(distribution);
+                const pending = Math.max(distribution.recipientCount - claimed, 0);
+                const isComplete = distribution.mode === "disperse" || pending === 0;
+                const progress = distribution.recipientCount > 0 ? (claimed / distribution.recipientCount) * 100 : 0;
+                return (
+                  <Link
+                    key={distribution.id}
+                    href={`/dashboard/${distribution.id}`}
+                    className="group flex items-center gap-3.5 rounded-xl border border-ink-900/[0.06] bg-paper-100/50 p-3.5 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)]"
+                  >
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink-900/[0.05] text-ink-600 transition-colors group-hover:bg-accent-600/10 group-hover:text-accent-600">
+                      <Icon className="size-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink-900">{distribution.title}</p>
+                      <p className="mt-0.5 text-[11px] text-ink-500">
+                        {distribution.recipientCount} recipient{distribution.recipientCount !== 1 ? "s" : ""}
+                        {" · "}
+                        <span className="capitalize">{distribution.mode}</span>
+                        {" · "}
+                        {timeAgo(distribution.createdAt)}
+                      </p>
+                      {distribution.mode === "airdrop" && (
+                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-ink-900/10">
+                          <div
+                            className="h-full rounded-full bg-success-600 transition-all"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          isComplete
+                            ? "bg-success-600/10 text-success-700"
+                            : "bg-amber-500/10 text-amber-600"
+                        }`}
+                      >
+                        {isComplete ? "Complete" : `${pending} pending`}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

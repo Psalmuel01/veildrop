@@ -14,7 +14,6 @@ import {
   Activity,
   CheckCircle2,
   Clock3,
-  ShieldCheck,
   Users,
 } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";

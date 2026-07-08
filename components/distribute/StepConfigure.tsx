@@ -1,10 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
-import { Coins, ArrowUpRight, Check } from "lucide-react";
+import { Coins, Check } from "lucide-react";
 import { Input, Label } from "@/components/ui/Input";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { SUPPORTED_TOKENS } from "@/lib/tokens";
 import type { DistributionMode } from "@/lib/templates";
 

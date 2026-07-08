@@ -20,7 +20,7 @@ import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
 import { saveDistribution } from "@/lib/distributions";
 import { clearDistributionDraft, loadDistributionDraft, saveDistributionDraft } from "@/lib/distribution-drafts";
-import { VEIL_TOKEN, CTTT_TOKEN, getTokenConfig } from "@/lib/tokens";
+import { getTokenConfig } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
@@ -63,7 +63,7 @@ function DistributeWizard() {
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
   const isZamaReady = useIsZamaReady();
-  const { data: meta, isLoading: isLoadingMeta } = useFaucetMetadata();
+  const { isLoading: isLoadingMeta } = useFaucetMetadata();
 
   const initialTemplate = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
 

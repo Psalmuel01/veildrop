@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Lock, ChevronDown, Check } from "lucide-react";
-import { useFaucetMetadata, useConfidentialBalance } from "@tokenops/sdk/testnet-faucet/react";
+import { useConfidentialBalance } from "@tokenops/sdk/testnet-faucet/react";
 import { useAccount, useReadContract } from "wagmi";
 import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
 import { formatAmount } from "@/lib/amount";

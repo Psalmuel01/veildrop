@@ -8,7 +8,6 @@ import { sepolia } from "wagmi/chains";
 import { ShieldCheck, ShieldAlert, CheckCircle2, ExternalLink, Wallet, AlertTriangle } from "lucide-react";
 import type { Hex } from "viem";
 import { useClaim, useGetClaimAmount, useAirdropIsSignatureClaimed, useAirdropToken } from "@tokenops/sdk/fhe-airdrop/react";
-import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -150,7 +149,6 @@ function ClaimPortalContent() {
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
   const isZamaReady = useIsZamaReady();
-  const { data: meta } = useFaucetMetadata();
 
   const encoded = searchParams.get("payload");
   const payload = encoded ? decodeClaimPayload(encoded) : null;

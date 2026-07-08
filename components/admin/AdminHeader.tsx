@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, Plus, BookOpen } from "lucide-react";
+import { Menu, X, BookOpen } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { BalanceWidget } from "@/components/admin/BalanceWidget";
 import { useIsZamaReady } from "@/app/providers";

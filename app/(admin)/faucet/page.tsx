@@ -6,7 +6,6 @@ import { useAccount, useReadContract } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { Droplets, Wallet, AlertTriangle, Check } from "lucide-react";
 import {
-  useFaucetMetadata,
   useConfidentialBalance,
   useMintConfidential,
 } from "@tokenops/sdk/testnet-faucet/react";
@@ -68,7 +67,6 @@ function BalanceReveal({ tokenAddress, symbol }: { tokenAddress: `0x${string}`; 
 function FaucetPanel() {
   const queryClient = useQueryClient();
   const { push: toast } = useToast();
-  const { data: meta, isLoading: isLoadingMeta } = useFaucetMetadata();
   const mintCTTT = useMintConfidential();
   const mintVeilToken = useMintVeilToken();
   const [selectedTokenId, setSelectedTokenId] = useState("veil");

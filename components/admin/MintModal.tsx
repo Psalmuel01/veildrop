@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useFaucetMetadata, useMintConfidential } from "@tokenops/sdk/testnet-faucet/react";
+import { useMintConfidential } from "@tokenops/sdk/testnet-faucet/react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -13,7 +13,6 @@ import { Check } from "lucide-react";
 export function MintModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { push: toast } = useToast();
-  const { data: meta } = useFaucetMetadata();
   const mintCTTT = useMintConfidential();
   const mintVeilToken = useMintVeilToken();
   const [selectedTokenId, setSelectedTokenId] = useState("veil");

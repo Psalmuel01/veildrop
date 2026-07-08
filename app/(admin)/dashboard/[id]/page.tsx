@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { ArrowLeft, ExternalLink, Wallet, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Wallet, AlertTriangle, CheckCircle2, Activity, ShieldCheck, Clock3 } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
@@ -34,7 +34,7 @@ export default function DistributionDetailPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-16 sm:px-8">
+    <main className="mx-auto max-w-4xl px-5 py-16 sm:px-8">
       <Link href="/dashboard" className="mb-6 flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900">
         <ArrowLeft className="size-3.5" />
         Back to my drops
@@ -109,9 +109,46 @@ export default function DistributionDetailPage() {
             </CardContent>
           </Card>
 
+          <div className="mb-4 grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardContent className="flex gap-3 py-5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
+                  <ShieldCheck className="size-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-ink-900">Administrator visibility</p>
+                  <p className="mt-1 text-sm text-ink-500">
+                    Recipient addresses, claim links, and claim state are inspectable. Plaintext token amounts are not.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex gap-3 py-5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-paper-100 text-ink-700">
+                  <Activity className="size-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-ink-900">Operational status</p>
+                  <p className="mt-1 text-sm text-ink-500">
+                    {distribution.mode === "airdrop"
+                      ? "Recipients claim on their own schedule. This page checks claim status from the connected wallet context."
+                      : "Tokens were pushed directly. Recipients do not need to take a claim action."}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Recipients</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>{distribution.mode === "airdrop" ? "Recipient Claim Ledger" : "Recipient Delivery Ledger"}</CardTitle>
+                <span className="flex items-center gap-1.5 text-xs text-ink-500">
+                  <Clock3 className="size-3.5" />
+                  {distribution.mode === "airdrop" ? `${claimedCount} confirmed` : "Delivered"}
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-hidden rounded-b-2xl border-t border-ink-900/[0.06]">

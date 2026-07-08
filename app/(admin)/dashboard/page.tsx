@@ -4,7 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { Inbox, Wallet, AlertTriangle, ArrowUpRight, Send, Gift } from "lucide-react";
+import {
+  Inbox,
+  Wallet,
+  AlertTriangle,
+  ArrowUpRight,
+  Send,
+  Gift,
+  Activity,
+  CheckCircle2,
+  Clock3,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -20,25 +32,68 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diffHours / 24)}d ago`;
 }
 
+function claimedTotal(distribution: StoredDistribution): number {
+  return distribution.recipients.filter((recipient) => recipient.claimed).length;
+}
+
+function StatCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  icon: typeof Activity;
+}) {
+  return (
+    <div className="rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs uppercase tracking-wide text-ink-500">{label}</p>
+        <Icon className="size-4 text-ink-500" />
+      </div>
+      <p className="font-display text-2xl font-bold text-ink-900">{value}</p>
+      <p className="mt-1 text-xs text-ink-500">{detail}</p>
+    </div>
+  );
+}
+
 function DistributionCard({ distribution }: { distribution: StoredDistribution }) {
   const Icon = distribution.mode === "disperse" ? Send : Gift;
+  const claimed = claimedTotal(distribution);
+  const pending = Math.max(distribution.recipientCount - claimed, 0);
+  const progress = distribution.recipientCount > 0 ? (claimed / distribution.recipientCount) * 100 : 0;
+
   return (
     <Link
       href={`/dashboard/${distribution.id}`}
-      className="flex items-center justify-between gap-4 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)]"
+      className="grid gap-4 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)] sm:grid-cols-[1fr_auto]"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="flex size-10 items-center justify-center rounded-lg bg-ink-900/5 text-ink-700">
           <Icon className="size-4" />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="font-display text-base font-bold text-ink-900">{distribution.title}</p>
           <p className="text-xs text-ink-500">
             {distribution.recipientCount} recipients, {distribution.mode}, {timeAgo(distribution.createdAt)}
           </p>
         </div>
       </div>
-      <EncryptedBadge />
+      <div className="flex min-w-[11rem] flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <EncryptedBadge />
+          <span className="text-xs font-medium text-ink-500">
+            {distribution.mode === "airdrop" ? `${pending} pending` : "Delivered"}
+          </span>
+        </div>
+        {distribution.mode === "airdrop" && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-ink-900/10">
+            <div className="h-full rounded-full bg-success-600" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+      </div>
     </Link>
   );
 }
@@ -52,12 +107,23 @@ export default function DashboardPage() {
     if (address) setDistributions(loadDistributions(address));
   }, [address]);
 
+  const totalRecipients = distributions.reduce((sum, distribution) => sum + distribution.recipientCount, 0);
+  const airdrops = distributions.filter((distribution) => distribution.mode === "airdrop");
+  const pendingClaims = airdrops.reduce(
+    (sum, distribution) => sum + Math.max(distribution.recipientCount - claimedTotal(distribution), 0),
+    0,
+  );
+  const completedDrops = distributions.filter((distribution) => {
+    if (distribution.mode === "disperse") return true;
+    return Math.max(distribution.recipientCount - claimedTotal(distribution), 0) === 0;
+  }).length;
+
   return (
-    <main className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
+    <main className="mx-auto max-w-5xl px-5 py-16 sm:px-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-ink-900">My Drops</h1>
-          <p className="mt-1 text-sm text-ink-500">Every distribution you&apos;ve created from this wallet.</p>
+          <p className="mt-1 text-sm text-ink-500">Monitor encrypted drops, claim progress, and operational history.</p>
         </div>
         {isConnected && isSepolia && distributions.length > 0 && (
           <Link href="/distribute">
@@ -99,10 +165,61 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col gap-3">
-          {distributions.map((d) => (
-            <DistributionCard key={d.id} distribution={d} />
-          ))}
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Drops" value={distributions.length} detail="Created from this wallet" icon={Activity} />
+            <StatCard label="Recipients" value={totalRecipients} detail="Addresses served" icon={Users} />
+            <StatCard label="Pending claims" value={pendingClaims} detail="Airdrop recipients remaining" icon={Clock3} />
+            <StatCard label="Complete" value={completedDrops} detail="No admin action needed" icon={CheckCircle2} />
+          </div>
+
+          <Card>
+            <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
+                <ShieldCheck className="size-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-ink-900">Privacy boundary</p>
+                <p className="mt-1 text-sm text-ink-500">
+                  You can track recipients, transactions, and claim status here. Plaintext allocation amounts remain sealed.
+                </p>
+              </div>
+              <Link href="/docs">
+                <Button variant="secondary" size="sm">
+                  Docs
+                  <ArrowUpRight className="size-3.5" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-900">Active distribution audits</h2>
+              <Link href="/distribute" className="text-xs font-medium text-accent-600 hover:text-accent-700">
+                New distribution
+              </Link>
+            </div>
+            <div className="flex flex-col gap-3">
+              {distributions.map((d) => (
+                <DistributionCard key={d.id} distribution={d} />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4">
+            <h2 className="text-sm font-semibold text-ink-900">Recent activity</h2>
+            <div className="mt-3 flex flex-col gap-2">
+              {distributions.slice(0, 4).map((distribution) => (
+                <div key={distribution.id} className="flex items-center justify-between gap-3 text-xs">
+                  <span className="min-w-0 truncate text-ink-500">
+                    Created <span className="text-ink-900">{distribution.title}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-ink-500">{timeAgo(distribution.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </main>

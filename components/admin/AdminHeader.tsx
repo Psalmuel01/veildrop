@@ -123,7 +123,6 @@ export function AdminHeader() {
                 Docs
               </Link>
             </div>
-            </div>
           </motion.nav>
         )}
       </AnimatePresence>

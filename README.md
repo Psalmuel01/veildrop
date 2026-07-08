@@ -1,83 +1,153 @@
-# VeilDrop
+<p align="center">
+  <img src="https://img.shields.io/badge/Network-Sepolia%20Testnet-8b5cf6?style=flat-square" />
+  <img src="https://img.shields.io/badge/Node-%E2%89%A522-339933?style=flat-square&logo=nodedotjs" />
+  <img src="https://img.shields.io/badge/Built%20with-FHE-0ea5e9?style=flat-square" />
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=nextdotjs" />
+</p>
 
-Confidential token distribution on Ethereum for payroll, grants, investor allocations, and
-airdrops where recipient addresses are public but the **amount** each address receives is
-encrypted end to end, using Fully Homomorphic Encryption (FHE). Nobody but the recipient can
-ever see how much they were sent.
+<h1 align="center">VeilDrop</h1>
 
-Built on [Zama's](https://www.zama.org) FHE protocol via the [TokenOps SDK](https://docs.tokenops.xyz).
-The app works with TokenOps infrastructure and includes a separate `contracts/` workspace for
-VeilDrop's own ERC-7984 demo token, vCTT.
+<p align="center">
+  <strong>Confidential token distribution, powered by Fully Homomorphic Encryption.</strong><br/>
+  Recipient addresses are public. Amounts are not.
+</p>
 
-Runs on **Sepolia testnet only**.
+---
 
-## Requirements
+## What is VeilDrop?
 
-- **Node ≥ 22** (required by `@zama-fhe/sdk`; see `.nvmrc`)
+VeilDrop lets you distribute tokens to any number of recipients with **fully encrypted allocations**. No one — not block explorers, not other recipients, not even VeilDrop itself — can see how much each address received. Only the recipient, using their wallet, can decrypt their own allocation.
+
+This makes VeilDrop suitable for:
+
+- **Payroll** — pay contributors without leaking salary data on-chain
+- **Grants** — distribute grant amounts privately
+- **Investor allocations** — fund rounds without revealing per-investor token amounts
+- **Airdrops** — drop tokens to a community without public enumeration of amounts
+
+Confidentiality is enforced at the protocol level using [Zama's](https://www.zama.org) Fully Homomorphic Encryption (FHE), via the [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) confidential token standard. VeilDrop integrates with the [TokenOps SDK](https://docs.tokenops.xyz) and ships its own ERC-7984 demo token, **vCTT** (`VeilToken`).
+
+> **Testnet only** — VeilDrop currently runs on Ethereum **Sepolia** testnet.
+
+---
+
+## Supported Tokens
+
+| Token | Address | Description |
+|-------|---------|-------------|
+| **vCTT** (VeilToken) | [`0x1c20CeC1...670A42`](https://sepolia.etherscan.io/address/0x1c20CeC11BbfDB19f88450569Ed7a98A7a670A42) | VeilDrop's own ERC-7984 demo token, deployed and owned by this repo |
+| **CTTT** | TokenOps default | TokenOps' canonical confidential test token, useful for testers already on the platform |
+
+---
+
+## Distribution Modes
+
+VeilDrop supports two on-chain distribution strategies, both powered by `@tokenops/sdk`:
+
+### Disperse (Push)
+Admin sends tokens to all recipients in a single transaction. Recipients receive tokens automatically — no action required on their end. The admin pays gas for the full distribution.
+
+### Airdrop (Claim)
+Admin funds a pool and signs a per-recipient claim authorization off-chain. Recipients receive a stateless claim link containing their encrypted payload, and claim on their own schedule. No backend required — the full claim data is encoded in the URL.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node ≥ 22** (required by `@zama-fhe/sdk` — see `.nvmrc`)
 - [pnpm](https://pnpm.io)
-- A browser wallet (MetaMask or similar) with an injected provider, switched to Sepolia
+- A browser wallet (MetaMask or compatible) connected to **Sepolia**
 
-## Getting started
+### Installation
 
 ```bash
-nvm use          # or otherwise ensure Node 22+
+# Use the correct Node version
+nvm use
+
+# Install dependencies
 pnpm install
+
+# Start the dev server
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), connect a wallet on Sepolia, and mint test
-CTTT from [`/faucet`](http://localhost:3000/faucet) before creating a distribution.
+Open [http://localhost:3000](http://localhost:3000), connect your wallet on Sepolia, and mint testnet tokens from the [/faucet](http://localhost:3000/faucet) before creating a distribution.
 
-### Environment variables
+### Environment Variables
 
-None are required to run locally. The app falls back to a public Sepolia RPC. Optionally:
+No environment variables are required to run locally — the app falls back to a public Sepolia RPC. Optionally override:
 
 ```bash
-NEXT_PUBLIC_SEPOLIA_RPC_URL=https://your-rpc-url   # override the default public RPC
+# .env.local
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://your-rpc-endpoint
 ```
 
-## Routes
+---
 
-| Route | Purpose |
-| --- | --- |
+## App Routes
+
+| Route | Description |
+|-------|-------------|
 | `/` | Landing page |
-| `/distribute` | Wizard: create a Disperse (push) or Airdrop (claim) distribution |
-| `/dashboard`, `/dashboard/[id]` | Distributions created by the connected wallet (localStorage, per-address) |
-| `/claim?payload=...` | Recipient claim portal to decrypt and claim an Airdrop allocation |
-| `/faucet` | Mint testnet CTTT |
+| `/distribute` | Create a new Disperse or Airdrop distribution |
+| `/dashboard` | All distributions created by the connected wallet |
+| `/dashboard/[id]` | Detail view for a specific distribution |
+| `/claim?payload=...` | Recipient claim portal — decrypt and claim an Airdrop allocation |
+| `/faucet` | Mint testnet tokens (vCTT or CTTT) |
 | `/docs` | In-app documentation |
 
-## Architecture notes
+---
 
-- **Supported confidential tokens** include VeilDrop's own ERC-7984 demo token, vCTT,
-  and TokenOps' CTTT fallback token. vCTT demonstrates smart contract ownership for
-  this repo, while CTTT remains useful for testers already familiar with TokenOps.
-  Source: [`contracts/contracts/VeilToken.sol`](contracts/contracts/VeilToken.sol).
-  Sepolia deployment:
-  [`0x1c20CeC11BbfDB19f88450569Ed7a98A7a670A42`](https://sepolia.etherscan.io/address/0x1c20CeC11BbfDB19f88450569Ed7a98A7a670A42).
-- **Two distribution modes**, both from `@tokenops/sdk`: `fhe-disperse` (single push transaction,
-  admin pays gas, recipients do nothing) and `fhe-airdrop` (admin funds a pool and signs a claim
-  authorization per recipient; recipients claim on their own schedule via a stateless link with the
-  claim payload base64-encoded in the URL, with no backend).
-- **Encryption/decryption** goes through `@zama-fhe/react-sdk`'s `ZamaProvider`. It requires a live
-  `walletClient`, so it only mounts once a wallet is connected on Sepolia. See `useIsZamaReady()`
-  in `app/providers.tsx`. Components that call Zama hooks must gate on that flag, not on
-  `isConnected` alone, or they can mount before the provider during the connection race.
-- **`lib/encryptor-adapter.ts`** bridges a real shape mismatch between the two SDKs at their
-  currently published versions: `@tokenops/sdk`'s `Encryptor` expects
-  `{ handles: Uint8Array[], inputProof: Uint8Array }`, but `@zama-fhe/sdk@3.2.0`'s relayer returns
-  `{ encryptedValues: Hex[], inputProof: Hex }`. Both SDKs' own quickstart examples don't type-check
-  against each other as published. This adapter is required, not optional.
-- **Fonts are self-hosted** (`next/font/local`, files under `app/fonts/`) rather than
-  `next/font/google`. In some sandboxed/restricted-network environments the Next dev server's font
-  fetch silently falls back to a generic font with no build error. Self-hosting sidesteps that.
-- **Wallet-mode Disperse needs two separate approvals**, not one: the admin's subwallets must
-  approve the Disperse singleton (`register()` / `useApproveTokenOnWallets`), *and* the admin's own
-  balance must separately approve the singleton as operator (`useConfidentialSetOperator`). Wallet
-  mode pulls the total from the admin's balance into their subwallets before fanning out. Skipping
-  the second approval reverts on-chain with `ERC7984UnauthorizedSpender`.
+## Architecture
+
+### FHE Provider & Readiness
+Encryption and decryption go through `@zama-fhe/react-sdk`'s `ZamaProvider`. The provider only mounts after a wallet is connected on Sepolia. Components that call Zama hooks must gate on `useIsZamaReady()` (see `app/providers.tsx`) — not just `isConnected` — to avoid mounting before the provider is ready during the connection handshake.
+
+### Encryptor Adapter
+`lib/encryptor-adapter.ts` bridges a shape mismatch between `@tokenops/sdk` and `@zama-fhe/sdk` at their currently published versions:
+- `@tokenops/sdk`'s `Encryptor` expects `{ handles: Uint8Array[], inputProof: Uint8Array }`
+- `@zama-fhe/sdk@3.2.0`'s relayer returns `{ encryptedValues: Hex[], inputProof: Hex }`
+
+This adapter is **required**, not optional.
+
+### Disperse: Two-Step Approval
+Wallet-mode Disperse requires two separate approvals:
+1. Each subwallet must approve the Disperse singleton via `register()` / `useApproveTokenOnWallets`
+2. The admin's own balance must separately approve the singleton as operator via `useConfidentialSetOperator`
+
+Skipping the second step reverts on-chain with `ERC7984UnauthorizedSpender`.
+
+### Self-Hosted Fonts
+Fonts are self-hosted via `next/font/local` (files under `app/fonts/`) rather than `next/font/google`. This avoids silent fallbacks in sandboxed network environments where the Next.js dev server's Google Fonts fetch may fail without a build error.
+
+### Dashboard Storage
+Distributions are stored in `localStorage`, scoped per connected wallet address. No backend, no database.
+
+---
 
 ## Stack
 
-Next.js 14 (App Router) · TypeScript · Tailwind · wagmi/viem · TanStack Query · `@tokenops/sdk` ·
-`@zama-fhe/sdk` / `@zama-fhe/react-sdk` · Framer Motion
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Blockchain | wagmi · viem |
+| Data fetching | TanStack Query |
+| FHE | `@zama-fhe/sdk` · `@zama-fhe/react-sdk` |
+| Token ops | `@tokenops/sdk` |
+| Animations | Framer Motion |
+
+---
+
+## Contracts
+
+The `contracts/` workspace contains the `VeilToken` ERC-7984 source. See [`contracts/contracts/VeilToken.sol`](contracts/contracts/VeilToken.sol).
+
+Sepolia deployment: [`0x1c20CeC11BbfDB19f88450569Ed7a98A7a670A42`](https://sepolia.etherscan.io/address/0x1c20CeC11BbfDB19f88450569Ed7a98A7a670A42)
+
+---
+
+<p align="center">Built on <a href="https://www.zama.org">Zama FHE</a> · <a href="https://docs.tokenops.xyz">TokenOps SDK</a></p>

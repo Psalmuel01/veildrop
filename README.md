@@ -119,12 +119,6 @@ Wallet-mode Disperse requires two separate approvals:
 
 Skipping the second step reverts on-chain with `ERC7984UnauthorizedSpender`.
 
-### Self-Hosted Fonts
-Fonts are self-hosted via `next/font/local` (files under `app/fonts/`) rather than `next/font/google`. This avoids silent fallbacks in sandboxed network environments where the Next.js dev server's Google Fonts fetch may fail without a build error.
-
-### Dashboard Storage
-Distributions are stored in `localStorage`, scoped per connected wallet address. No backend, no database.
-
 ---
 
 ## Stack

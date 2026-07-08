@@ -41,7 +41,7 @@ export function AdminHeader() {
       className={cn(
         "sticky top-0 z-30 border-b transition-all duration-300",
         scrolled
-          ? "border-ink-900/10 bg-paper-100/85 backdrop-blur-md"
+          ? "border-ink-900/[0.06] bg-paper-100/85 backdrop-blur-md"
           : "border-transparent bg-transparent",
       )}
     >
@@ -67,23 +67,24 @@ export function AdminHeader() {
           {showBalanceControls && (
             <div className="hidden items-center gap-2 sm:flex">
               <BalanceWidget />
-              <button
+              {/* <button
                 onClick={() => setMintOpen(true)}
-                className="flex size-9 items-center justify-center rounded-full border border-ink-900/15 bg-paper-50 text-ink-700 transition-colors hover:border-accent-600/40 hover:text-accent-600"
+                className="flex size-9 items-center justify-center rounded-full border border-ink-900/[0.1] bg-paper-50 text-ink-700 transition-colors hover:border-accent-600/40 hover:text-accent-600"
                 aria-label="Mint test tokens"
                 title="Mint test tokens"
               >
                 <Plus className="size-4" />
-              </button>
+              </button> */}
             </div>
           )}
           <Link
             href="/docs"
-            className="hidden size-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 sm:flex"
+            className="hidden h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 sm:flex"
             aria-label="Documentation"
             title="Documentation"
           >
             <BookOpen className="size-4" />
+            Docs
           </Link>
           <WalletButton />
           <button
@@ -103,7 +104,7 @@ export function AdminHeader() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-ink-900/8 bg-paper-100/95 backdrop-blur-md sm:hidden"
+            className="overflow-hidden border-t border-ink-900/[0.05] bg-paper-100/95 backdrop-blur-md sm:hidden"
           >
             <div className="flex flex-col gap-1 px-5 py-3">
               {NAV_LINKS.map((link) => (
@@ -128,7 +129,7 @@ export function AdminHeader() {
                   Mint test tokens
                 </button>
               )}
-              <div className="my-1 border-t border-ink-900/8" />
+              <div className="my-1 border-t border-ink-900/[0.05]" />
               <Link
                 href="/docs"
                 onClick={() => setMenuOpen(false)}

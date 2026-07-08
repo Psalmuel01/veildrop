@@ -17,6 +17,7 @@ import type { Address } from "viem";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { BalanceCheck } from "@/components/distribute/BalanceCheck";
+import { LaunchErrorPanel, LaunchTimeline, type LaunchStep } from "@/components/distribute/LaunchTimeline";
 import { formatAmount } from "@/lib/amount";
 import { toTokenOpsEncryptor } from "@/lib/encryptor-adapter";
 import type { RecipientRow } from "@/lib/recipients";
@@ -56,6 +57,7 @@ export function StepReviewDisperse({
   const { address: user, chainId } = useAccount();
   const zamaSDK = useZamaSDK();
   const [balanceSufficient, setBalanceSufficient] = useState<boolean | null>(null);
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   const addresses = useMemo(() => recipients.map((r) => r.address as Address), [recipients]);
   const amounts = useMemo(() => recipients.map((r) => r.amountRaw), [recipients]);
@@ -93,6 +95,58 @@ export function StepReviewDisperse({
 
   const readyToExecute = !!preflight?.ready && !!isSingletonApproved && balanceSufficient === true;
 
+  const launchSteps: LaunchStep[] = [
+    {
+      id: "balance",
+      label: "Check encrypted token balance",
+      detail: `${formatAmount(totalRaw)} ${tokenSymbol} required`,
+      status: balanceSufficient === null ? "pending" : balanceSufficient ? "complete" : "failed",
+    },
+    {
+      id: "register",
+      label: "Register wallet for confidential disperse",
+      status: isCheckingRegistration || register.isPending ? "pending" : isRegistered ? "complete" : "idle",
+    },
+    {
+      id: "subwallets",
+      label: "Approve subwallets for this token",
+      status: isPreflighting || approve.isPending ? "pending" : preflight?.hasApprovedSubwallets.both ? "complete" : "idle",
+    },
+    {
+      id: "preflight",
+      label: "Validate recipient batch",
+      status: isPreflighting ? "pending" : preflight?.batchOk && preflight?.amountsOk ? "complete" : preflight ? "failed" : "idle",
+    },
+    {
+      id: "operator",
+      label: "Approve Disperse to move your balance",
+      status: isCheckingSingletonApproval || setSingletonOperator.isPending ? "pending" : isSingletonApproved ? "complete" : "idle",
+    },
+    {
+      id: "submit",
+      label: "Submit encrypted disperse transaction",
+      detail: "Wallet confirmation and chain confirmation happen here",
+      status: disperse.isPending ? "pending" : launchError ? "failed" : "idle",
+    },
+  ];
+
+  function handleDisperse() {
+    setLaunchError(null);
+    disperse.mutate(
+      { token: tokenAddress, mode: "wallet", recipients: addresses, amounts },
+      {
+        onSuccess: (result) => {
+          invalidateDisperse();
+          onSuccess(result);
+        },
+        onError: (err) => {
+          setLaunchError(err.message);
+          toast({ kind: "error", title: "Disperse failed", description: err.message });
+        },
+      },
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -119,7 +173,7 @@ export function StepReviewDisperse({
         </div>
       </div>
 
-      <div className="rounded-xl border border-ink-900/10 px-4">
+      <div className="rounded-xl border border-ink-900/[0.06] px-4">
         <ChecklistItem
           ok={!!isRegistered}
           pending={isCheckingRegistration || register.isPending}
@@ -207,22 +261,17 @@ export function StepReviewDisperse({
         onResolved={setBalanceSufficient}
       />
 
+      <LaunchTimeline steps={launchSteps} />
+
+      {launchError && (
+        <LaunchErrorPanel title="Disperse transaction failed" message={launchError} onRetry={readyToExecute ? handleDisperse : undefined} />
+      )}
+
       <Button
         size="lg"
         disabled={!readyToExecute}
         isLoading={disperse.isPending}
-        onClick={() =>
-          disperse.mutate(
-            { token: tokenAddress, mode: "wallet", recipients: addresses, amounts },
-            {
-              onSuccess: (result) => {
-                invalidateDisperse();
-                onSuccess(result);
-              },
-              onError: (err) => toast({ kind: "error", title: "Disperse failed", description: err.message }),
-            },
-          )
-        }
+        onClick={handleDisperse}
       >
         {disperse.isPending ? "Dispersing…" : `Disperse to ${recipients.length} recipients`}
       </Button>

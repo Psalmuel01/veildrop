@@ -28,7 +28,7 @@ export function CsvUploader({ onParsed }: { onParsed: (csvText: string) => void 
       {...getRootProps()}
       className={cn(
         "flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors",
-        isDragActive ? "border-accent-600 bg-accent-100/40" : "border-ink-900/20 hover:border-ink-900/40",
+        isDragActive ? "border-accent-600 bg-accent-100/40" : "border-ink-900/[0.12] hover:border-ink-900/[0.28]",
       )}
     >
       <input {...getInputProps()} />

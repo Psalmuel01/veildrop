@@ -11,6 +11,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-body), sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   position: relative;
 }
 

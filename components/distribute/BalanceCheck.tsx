@@ -35,7 +35,7 @@ export function BalanceCheck({
 
   if (!isRevealed) {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-ink-900/10 bg-paper-100 px-4 py-3">
+      <div className="flex items-center justify-between rounded-lg border border-ink-900/[0.06] bg-paper-100 px-4 py-3">
         <span className="flex items-center gap-2 text-sm text-ink-700">
           <ShieldQuestion className="size-4 text-ink-500" />
           Confirm you hold enough {tokenSymbol} before executing.

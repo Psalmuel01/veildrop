@@ -28,7 +28,7 @@ export default function Home() {
       <section className="relative overflow-hidden px-5 pb-20 pt-20 text-center sm:px-8 sm:pt-28">
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-12rem] h-[36rem] w-[56rem] -translate-x-1/2 rounded-full bg-accent-600/[0.12] blur-[110px]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-600/45 to-transparent"
         />
         <div
           aria-hidden
@@ -67,18 +67,18 @@ export default function Home() {
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
-            <a href="#how-it-works">
+            <Link href="/docs">
               <Button size="lg" variant="secondary">
-                See how it works
+                See docs
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Live demo of the reveal mechanic */}
       <section className="relative mx-auto max-w-3xl px-5 pb-24 sm:px-8">
-        <div className="rounded-3xl border border-ink-900/10 bg-paper-50 px-8 py-14">
+        <div className="rounded-3xl border border-ink-900/[0.07] bg-paper-50 px-8 py-14">
           <p className="mb-8 text-center text-sm font-medium text-ink-500">
             This is what a recipient sees, try it
           </p>
@@ -87,7 +87,7 @@ export default function Home() {
       </section>
 
       {/* The problem */}
-      <section className="relative overflow-hidden border-y border-ink-900/8 bg-paper-50 py-20">
+      <section className="relative overflow-hidden border-y border-ink-900/[0.05] bg-paper-50 py-20">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-accent-600/20 blur-[100px]"
@@ -118,7 +118,7 @@ export default function Home() {
           {HOW_IT_WORKS.map((step, i) => (
             <div
               key={step.title}
-              className="flex items-start gap-6 border-t border-ink-900/8 py-7 first:border-t-0 sm:gap-10"
+              className="flex items-start gap-6 border-t border-ink-900/[0.05] py-7 first:border-t-0 sm:gap-10"
             >
               <span className="font-display text-4xl font-bold text-ink-900/15 sm:text-5xl">
                 {String(i + 1).padStart(2, "0")}
@@ -143,7 +143,7 @@ export default function Home() {
             <Link
               key={template.id}
               href={`/distribute?template=${template.id}`}
-              className="group flex flex-col gap-3 rounded-2xl border border-ink-900/10 bg-paper-50 p-6 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)]"
+              className="group flex flex-col gap-3 rounded-2xl border border-ink-900/[0.07] bg-paper-50 p-6 transition-all hover:-translate-y-0.5 hover:border-accent-600/40 hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4)]"
             >
               <div className="flex size-10 items-center justify-center rounded-full bg-ink-900/5 text-ink-700 group-hover:bg-accent-100 group-hover:text-accent-600">
                 <template.icon className="size-5" />
@@ -156,7 +156,7 @@ export default function Home() {
       </section>
 
       {/* Closing CTA */}
-      <section className="relative overflow-hidden border-t border-ink-900/8 py-20 text-center">
+      <section className="relative overflow-hidden border-t border-ink-900/[0.05] py-20 text-center">
         <div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-600/10 blur-[100px]"
@@ -177,7 +177,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-ink-900/8 py-14">
+      <footer className="border-t border-ink-900/[0.05] py-14">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-5 sm:flex-row sm:px-8">
           <div className="flex items-center gap-0.5">
             <span className="font-display text-xl font-bold text-ink-900">VeilDrop</span>

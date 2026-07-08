@@ -42,7 +42,7 @@ export function WalletButton() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-10 items-center gap-2 rounded-lg border border-ink-900/15 bg-paper-50 px-3.5 text-sm text-ink-900 transition-colors hover:border-ink-900/30"
+        className="inline-flex h-10 items-center gap-2 rounded-lg border border-ink-900/[0.08] bg-paper-50 px-3.5 text-sm text-ink-900 transition-colors hover:border-ink-900/[0.22]"
       >
         <span className="size-2 rounded-full bg-success-600" />
         <span className="font-mono">{truncate(address!)}</span>
@@ -51,7 +51,7 @@ export function WalletButton() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-lg border border-ink-900/10 bg-paper-50 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.5)]">
+          <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-lg border border-ink-900/[0.06] bg-paper-50 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.5)]">
             <button
               onClick={() => {
                 disconnect();

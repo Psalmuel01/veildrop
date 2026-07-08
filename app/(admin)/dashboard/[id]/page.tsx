@@ -101,7 +101,7 @@ export default function DistributionDetailPage() {
                 href={`${SEPOLIA_EXPLORER}${distribution.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-fit items-center gap-1.5 rounded-lg border border-ink-900/15 px-3 py-1.5 font-mono text-xs text-ink-700 hover:border-ink-900/30"
+                className="flex w-fit items-center gap-1.5 rounded-lg border border-ink-900/[0.08] px-3 py-1.5 font-mono text-xs text-ink-700 hover:border-ink-900/[0.22]"
               >
                 {distribution.txHash.slice(0, 10)}…{distribution.txHash.slice(-8)}
                 <ExternalLink className="size-3" />
@@ -114,7 +114,7 @@ export default function DistributionDetailPage() {
               <CardTitle>Recipients</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-hidden rounded-b-2xl border-t border-ink-900/10">
+              <div className="overflow-hidden rounded-b-2xl border-t border-ink-900/[0.06]">
                 {distribution.recipients.map((r) =>
                   distribution.mode === "airdrop" ? (
                     <RecipientStatusRow
@@ -126,7 +126,7 @@ export default function DistributionDetailPage() {
                   ) : (
                     <div
                       key={r.address}
-                      className="flex items-center justify-between gap-3 border-b border-ink-900/6 px-4 py-2.5 last:border-0"
+                      className="flex items-center justify-between gap-3 border-b border-ink-900/[0.04] px-4 py-2.5 last:border-0"
                     >
                       <span className="truncate font-mono text-xs text-ink-900">{r.address}</span>
                       <div className="flex items-center gap-3">

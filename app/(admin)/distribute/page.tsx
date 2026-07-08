@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { Check, Wallet, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Check, Clock3, Trash2, Wallet } from "lucide-react";
 import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -19,6 +19,7 @@ import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
 import { saveDistribution } from "@/lib/distributions";
+import { clearDistributionDraft, loadDistributionDraft, saveDistributionDraft } from "@/lib/distribution-drafts";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
@@ -76,10 +77,51 @@ function DistributeWizard() {
   });
   const [recipients, setRecipients] = useState<RecipientRow[]>([]);
   const [result, setResult] = useState<WizardResult | null>(null);
+  const [draftLoadedAt, setDraftLoadedAt] = useState<number | null>(null);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saved">("idle");
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
   const summary = summarizeRecipients(recipients);
   const validRecipients = recipients.filter((r) => r.isValidAddress && r.isValidAmount && !r.isDuplicate);
+
+  useEffect(() => {
+    if (!address) return;
+    const draft = loadDistributionDraft(address);
+    if (!draft) return;
+    setStep(Math.min(draft.step, 3));
+    setTemplateId(TEMPLATES.some((t) => t.id === draft.templateId) ? draft.templateId : TEMPLATES[0]!.id);
+    setMode(draft.mode);
+    setConfig(draft.config);
+    setRecipients(draft.recipients);
+    setDraftLoadedAt(draft.updatedAt);
+  }, [address]);
+
+  useEffect(() => {
+    if (!address || result || step >= 4) return;
+    saveDistributionDraft(address, {
+      step,
+      templateId,
+      mode,
+      config,
+      recipients,
+      updatedAt: Date.now(),
+    });
+    setDraftStatus("saved");
+    const timeout = window.setTimeout(() => setDraftStatus("idle"), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [address, step, templateId, mode, config, recipients, result]);
+
+  function discardDraft() {
+    if (address) clearDistributionDraft(address);
+    const initial = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
+    setStep(0);
+    setTemplateId(initial.id);
+    setMode(initial.defaultMode);
+    setConfig({ title: initial.copy.title, description: "", claimStart: "", claimEnd: "" });
+    setRecipients([]);
+    setResult(null);
+    setDraftLoadedAt(null);
+  }
 
   function handleDisperseSuccess(disperseResult: DisperseResult) {
     const txHash = disperseResult.hash;
@@ -96,6 +138,7 @@ function DistributeWizard() {
         txHash,
         recipients: validRecipients.map((r) => ({ address: r.address, claimed: true })),
       });
+      clearDistributionDraft(address);
     }
     setResult({ mode: "disperse", txHash, recipientCount: validRecipients.length });
     setStep(4);
@@ -116,6 +159,7 @@ function DistributeWizard() {
         airdropAddress: airdropResult.airdropAddress,
         recipients: airdropResult.claimLinks.map((c) => ({ address: c.address, claimed: false, claimUrl: c.url })),
       });
+      clearDistributionDraft(address);
     }
     setResult({
       mode: "airdrop",
@@ -154,6 +198,26 @@ function DistributeWizard() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-900/[0.07] bg-paper-50 px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-500">
+          <Clock3 className="size-4 text-accent-600" />
+          {draftLoadedAt ? (
+            <span>
+              Draft restored from {new Date(draftLoadedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+            </span>
+          ) : draftStatus === "saved" ? (
+            <span>Draft saved</span>
+          ) : (
+            <span>Draft auto-saves on this wallet</span>
+          )}
+        </div>
+        {(recipients.length > 0 || step > 0 || !!config.description) && (
+          <Button size="sm" variant="ghost" onClick={discardDraft}>
+            <Trash2 className="size-3.5" />
+            Discard
+          </Button>
+        )}
+      </div>
       <Stepper step={step} />
       <Card>
         <CardContent className="py-8">
@@ -207,7 +271,7 @@ function DistributeWizard() {
           )}
 
           {step < 4 && (
-            <div className="mt-8 flex items-center justify-between border-t border-ink-900/8 pt-6">
+            <div className="mt-8 flex items-center justify-between border-t border-ink-900/[0.05] pt-6">
               <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
                 Back
               </Button>

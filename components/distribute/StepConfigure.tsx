@@ -43,7 +43,7 @@ export function StepConfigure({
         {isLoading || !meta ? (
           <Skeleton className="mt-2 h-14 w-full" />
         ) : (
-          <div className="mt-2 flex items-center justify-between rounded-lg border border-ink-900/10 bg-paper-100 px-4 py-3">
+          <div className="mt-2 flex items-center justify-between rounded-lg border border-ink-900/[0.06] bg-paper-100 px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="flex size-9 items-center justify-center rounded-lg bg-accent-100 text-accent-700">
                 <Coins className="size-4" />
@@ -82,7 +82,7 @@ export function StepConfigure({
           value={config.description}
           onChange={(e) => onChange({ ...config, description: e.target.value })}
           rows={3}
-          className="mt-2 w-full rounded-lg border border-ink-900/15 bg-paper-50 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-500/70 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/40"
+          className="mt-2 w-full rounded-lg border border-ink-900/[0.08] bg-paper-50 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-500/70 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/40"
           placeholder="Internal note — recipients never see this."
         />
       </div>

@@ -20,7 +20,7 @@ const SECTIONS = [
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-24 border-b border-ink-900/8 py-14 first:pt-0 last:border-0">
+    <section id={id} className="scroll-mt-24 border-b border-ink-900/[0.05] py-14 first:pt-0 last:border-0">
       <h2 className="font-display text-2xl font-bold text-ink-900 sm:text-3xl">{title}</h2>
       <div className="mt-5 flex flex-col gap-4 text-[15px] leading-relaxed text-ink-700">{children}</div>
     </section>
@@ -42,7 +42,7 @@ export default function DocsPage() {
         ))}
         <Link
           href="/faucet"
-          className="mt-4 flex items-center gap-1 rounded-full border border-ink-900/10 px-3.5 py-1.5 text-sm font-medium text-accent-600 hover:border-accent-600/40"
+          className="mt-4 flex items-center gap-1 rounded-full border border-ink-900/[0.06] px-3.5 py-1.5 text-sm font-medium text-accent-600 hover:border-accent-600/40"
         >
           Get testnet CTTT
           <ArrowUpRight className="size-3.5" />
@@ -124,7 +124,7 @@ export default function DocsPage() {
           <p>VeilDrop ships two distribution mechanisms. The wizard picks a sensible default based on your use case, but you can override it under &quot;Advanced&quot; in step 1.</p>
 
           <div className="mt-2 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-ink-900/10 p-5">
+            <div className="rounded-xl border border-ink-900/[0.06] p-5">
               <div className="flex items-center gap-2 text-ink-900">
                 <Send className="size-4 text-accent-600" />
                 <h3 className="font-display text-lg font-semibold">Disperse</h3>
@@ -140,7 +140,7 @@ export default function DocsPage() {
                 <li>− One time wallet registration before first use</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-ink-900/10 p-5">
+            <div className="rounded-xl border border-ink-900/[0.06] p-5">
               <div className="flex items-center gap-2 text-ink-900">
                 <Gift className="size-4 text-accent-600" />
                 <h3 className="font-display text-lg font-semibold">Airdrop</h3>
@@ -213,7 +213,7 @@ export default function DocsPage() {
               </li>
             ))}
           </ol>
-          <p className="flex items-start gap-2 rounded-lg border border-ink-900/10 bg-paper-50 p-4 text-sm">
+          <p className="flex items-start gap-2 rounded-lg border border-ink-900/[0.06] bg-paper-50 p-4 text-sm">
             <Lock className="mt-0.5 size-4 shrink-0 text-accent-600" />
             Decrypting only reveals the amount to you, in your browser. It&apos;s never sent anywhere
             readable by VeilDrop or anyone else.

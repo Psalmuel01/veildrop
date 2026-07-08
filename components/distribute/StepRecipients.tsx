@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { CsvUploader } from "@/components/distribute/CsvUploader";
 import { RecipientsTable } from "@/components/distribute/RecipientsTable";
-import { parseRecipientsCsv, type RecipientRow } from "@/lib/recipients";
+import { isRowValid, parseRecipientsCsv, type RecipientRow } from "@/lib/recipients";
 
 export function StepRecipients({
   rows,
@@ -15,6 +16,14 @@ export function StepRecipients({
   tokenSymbol: string;
   recipientLabel: string;
 }) {
+  const [importSummary, setImportSummary] = useState<{ total: number; invalid: number } | null>(null);
+
+  function handleCsvParsed(csv: string) {
+    const parsed = parseRecipientsCsv(csv);
+    setImportSummary({ total: parsed.length, invalid: parsed.filter((row) => !isRowValid(row)).length });
+    onChange(parsed);
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -24,7 +33,22 @@ export function StepRecipients({
         </p>
       </div>
 
-      <CsvUploader onParsed={(csv) => onChange(parseRecipientsCsv(csv))} />
+      <div className="flex flex-col gap-3">
+        <CsvUploader onParsed={handleCsvParsed} />
+        {importSummary && (
+          <div className="rounded-xl border border-ink-900/[0.06] bg-paper-100 px-4 py-3 text-sm text-ink-500">
+            Imported <span className="font-semibold text-ink-900">{importSummary.total}</span> rows
+            {importSummary.invalid > 0 ? (
+              <>
+                {" "}
+                with <span className="font-semibold text-error-600">{importSummary.invalid}</span> needing attention.
+              </>
+            ) : (
+              <> with no validation issues.</>
+            )}
+          </div>
+        )}
+      </div>
 
       <RecipientsTable
         rows={rows}

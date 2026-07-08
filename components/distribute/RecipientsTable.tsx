@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Eraser, Plus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatAmount } from "@/lib/amount";
 import {
   addManualRecipient,
+  isRowValid,
   removeRecipient,
   summarizeRecipients,
   updateRecipient,
@@ -35,7 +36,15 @@ export function RecipientsTable({
 }) {
   const [newAddress, setNewAddress] = useState("");
   const [newAmount, setNewAmount] = useState("");
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState<"all" | "invalid">("all");
   const summary = summarizeRecipients(rows);
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleRows = rows.filter((row) => {
+    if (view === "invalid" && isRowValid(row)) return false;
+    if (!normalizedQuery) return true;
+    return row.address.toLowerCase().includes(normalizedQuery) || row.amountDisplay.toLowerCase().includes(normalizedQuery);
+  });
 
   function handleAdd() {
     if (!newAddress.trim() || !newAmount.trim()) return;
@@ -44,9 +53,13 @@ export function RecipientsTable({
     setNewAmount("");
   }
 
+  function removeInvalidRows() {
+    onChange(rows.filter(isRowValid));
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-paper-100 px-4 py-3">
+      <div className="sticky top-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-900/[0.06] bg-paper-100 px-4 py-3 shadow-[0_12px_24px_-20px_rgba(0,0,0,0.65)]">
         <div className="flex gap-6 text-sm">
           <span>
             <span className="font-semibold text-ink-900">{summary.total}</span>{" "}
@@ -63,12 +76,44 @@ export function RecipientsTable({
             </span>
           )}
         </div>
+        {summary.invalid > 0 && (
+          <Button size="sm" variant="secondary" onClick={removeInvalidRows}>
+            <Eraser className="size-3.5" />
+            Remove invalid
+          </Button>
+        )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-ink-900/10">
+      <div className="flex flex-col gap-3 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-3 sm:flex-row sm:items-center">
+        <label className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-ink-900/[0.08] bg-paper-100 px-3 text-sm">
+          <Search className="size-4 text-ink-500" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search address or amount"
+            className="min-w-0 flex-1 bg-transparent text-ink-900 placeholder:text-ink-500/70 focus:outline-none"
+          />
+        </label>
+        <div className="grid grid-cols-2 rounded-full border border-ink-900/[0.08] p-0.5 text-xs font-medium">
+          <button
+            onClick={() => setView("all")}
+            className={cn("rounded-full px-3 py-2 text-ink-500", view === "all" && "bg-ink-900 text-paper-100")}
+          >
+            All rows
+          </button>
+          <button
+            onClick={() => setView("invalid")}
+            className={cn("rounded-full px-3 py-2 text-ink-500", view === "invalid" && "bg-ink-900 text-paper-100")}
+          >
+            Needs attention
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-ink-900/[0.06]">
         <table className="w-full min-w-[420px] text-sm">
           <thead>
-            <tr className="border-b border-ink-900/10 bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
+            <tr className="border-b border-ink-900/[0.06] bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
               <th className="px-4 py-2.5 font-medium">{recipientLabel} address</th>
               <th className="px-4 py-2.5 font-medium">Amount</th>
               <th className="w-10 px-4 py-2.5" />
@@ -76,7 +121,7 @@ export function RecipientsTable({
           </thead>
           <tbody>
             <AnimatePresence initial={false}>
-              {rows.map((row, index) => {
+              {visibleRows.map((row, index) => {
                 const error = rowError(row);
                 return (
                   <motion.tr
@@ -85,7 +130,7 @@ export function RecipientsTable({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.3) }}
-                    className={cn("border-b border-ink-900/6 last:border-0", error && "bg-error-100/40")}
+                    className={cn("border-b border-ink-900/[0.04] last:border-0", error && "bg-error-100/40")}
                   >
                     <td className="px-4 py-2">
                       <input
@@ -129,9 +174,14 @@ export function RecipientsTable({
             No {recipientLabel.toLowerCase()}s yet — upload a CSV or add one below.
           </div>
         )}
+        {rows.length > 0 && visibleRows.length === 0 && (
+          <div className="px-4 py-10 text-center text-sm text-ink-500">
+            No rows match the current search and filter.
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-ink-900/15 p-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-ink-900/[0.08] p-3 sm:flex-row sm:items-center">
         <Input
           mono
           placeholder="0xRecipientAddress"

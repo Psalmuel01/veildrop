@@ -31,7 +31,7 @@ export function RecipientStatusRow({
   }, [isClaimed]);
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-ink-900/6 px-4 py-2.5 last:border-0">
+    <div className="flex items-center justify-between gap-3 border-b border-ink-900/[0.04] px-4 py-2.5 last:border-0">
       <span className="truncate font-mono text-xs text-ink-900">{address}</span>
       <div className="flex shrink-0 items-center gap-3">
         <EncryptedBadge className="hidden sm:inline-flex" />

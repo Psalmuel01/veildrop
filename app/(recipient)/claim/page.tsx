@@ -111,7 +111,7 @@ function ClaimActions({ payload, tokenSymbol }: { payload: ClaimPayload; tokenSy
         onDecrypt={handleDecryptClick}
       />
 
-      <div className="border-t border-ink-900/8 pt-6">
+      <div className="border-t border-ink-900/[0.05] pt-6">
         {isCheckingClaimed ? (
           <Skeleton className="h-11 w-full" />
         ) : isClaimed ? (

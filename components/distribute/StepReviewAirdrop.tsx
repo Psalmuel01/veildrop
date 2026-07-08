@@ -12,6 +12,7 @@ import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { BalanceCheck } from "@/components/distribute/BalanceCheck";
+import { LaunchErrorPanel, LaunchTimeline, type LaunchStep } from "@/components/distribute/LaunchTimeline";
 import { formatAmount } from "@/lib/amount";
 import { toTokenOpsEncryptor } from "@/lib/encryptor-adapter";
 import { buildClaimUrl, type ClaimPayload } from "@/lib/claim-link";
@@ -75,6 +76,8 @@ export function StepReviewAirdrop({
   const [balanceSufficient, setBalanceSufficient] = useState<boolean | null>(null);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
+  const [launchPhase, setLaunchPhase] = useState<"idle" | "deploying" | "encrypting">("idle");
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   const totalRaw = recipients.reduce((sum, r) => sum + r.amountRaw, 0n);
   const factoryAddress = chainId ? getFheAirdropFactoryAddress(chainId) : undefined;
@@ -92,9 +95,37 @@ export function StepReviewAirdrop({
 
   const readyToLaunch = !!isApproved && balanceSufficient === true && !!admin && !!factoryAddress;
 
+  const launchSteps: LaunchStep[] = [
+    {
+      id: "balance",
+      label: "Check encrypted token balance",
+      detail: `${formatAmount(totalRaw)} ${tokenSymbol} required`,
+      status: balanceSufficient === null ? "pending" : balanceSufficient ? "complete" : "failed",
+    },
+    {
+      id: "operator",
+      label: "Approve Airdrop factory to fund the pool",
+      status: isCheckingApproval || setOperator.isPending ? "pending" : isApproved ? "complete" : "idle",
+    },
+    {
+      id: "deploy",
+      label: "Create and fund airdrop contract",
+      detail: "Wallet confirmation and chain confirmation happen here",
+      status: launchPhase === "deploying" ? "pending" : launchError ? "failed" : "idle",
+    },
+    {
+      id: "encrypt",
+      label: "Encrypt allocations and sign claim links",
+      detail: progress ? `${progress.current} of ${progress.total} prepared` : "One confidential payload per recipient",
+      status: launchPhase === "encrypting" ? "pending" : launchError ? "failed" : "idle",
+    },
+  ];
+
   async function handleLaunch() {
     if (!admin || !factoryAddress) return;
     setIsLaunching(true);
+    setLaunchError(null);
+    setLaunchPhase("deploying");
     try {
       const now = Math.floor(Date.now() / 1000);
       const startTimestamp = config.claimStart ? Math.floor(new Date(config.claimStart).getTime() / 1000) : now + 60;
@@ -109,6 +140,7 @@ export function StepReviewAirdrop({
 
       const claimLinks: ClaimLinkResult[] = [];
       const encryptor = toTokenOpsEncryptor(zamaSDK.relayer);
+      setLaunchPhase("encrypting");
       for (let i = 0; i < recipients.length; i++) {
         const row = recipients[i]!;
         setProgress({ current: i + 1, total: recipients.length });
@@ -138,14 +170,17 @@ export function StepReviewAirdrop({
 
       onSuccess({ txHash: hash, airdropAddress: airdrop, claimLinks });
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setLaunchError(message);
       toast({
         kind: "error",
         title: "Airdrop launch failed",
-        description: err instanceof Error ? err.message : "Unknown error",
+        description: message,
       });
     } finally {
       setIsLaunching(false);
       setProgress(null);
+      setLaunchPhase("idle");
     }
   }
 
@@ -177,7 +212,7 @@ export function StepReviewAirdrop({
         </div>
       </div>
 
-      <div className="rounded-xl border border-ink-900/10 px-4">
+      <div className="rounded-xl border border-ink-900/[0.06] px-4">
         <ChecklistRow
           ok={!!isApproved}
           pending={isCheckingApproval || setOperator.isPending}
@@ -212,6 +247,8 @@ export function StepReviewAirdrop({
         onResolved={setBalanceSufficient}
       />
 
+      <LaunchTimeline steps={launchSteps} />
+
       {progress && (
         <div className="flex flex-col gap-2 rounded-lg border border-accent-600/25 bg-accent-100/40 px-4 py-3">
           <p className="text-sm font-medium text-ink-900">
@@ -224,6 +261,10 @@ export function StepReviewAirdrop({
             />
           </div>
         </div>
+      )}
+
+      {launchError && (
+        <LaunchErrorPanel title="Airdrop launch failed" message={launchError} onRetry={readyToLaunch ? handleLaunch : undefined} />
       )}
 
       <Button size="lg" disabled={!readyToLaunch} isLoading={isLaunching} onClick={handleLaunch}>

@@ -40,7 +40,7 @@ export function StepTemplate({
                 "relative flex flex-col gap-2 rounded-xl border p-4 text-left transition-all",
                 selected
                   ? "border-accent-600 bg-accent-100/30 ring-1 ring-accent-600"
-                  : "border-ink-900/10 hover:border-ink-900/25",
+                  : "border-ink-900/[0.07] hover:border-ink-900/[0.12]",
               )}
             >
               {selected && (
@@ -59,7 +59,7 @@ export function StepTemplate({
       </div>
 
       {template && (
-        <details className="group rounded-lg border border-ink-900/10 px-4 py-3 open:bg-paper-100/60">
+        <details className="group rounded-lg border border-ink-900/[0.07] px-4 py-3 open:bg-paper-100/60">
           <summary className="cursor-pointer text-sm font-medium text-ink-700 marker:content-none">
             Advanced: distribution mechanism
           </summary>

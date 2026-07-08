@@ -32,7 +32,7 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="relative w-full max-w-sm rounded-2xl border border-ink-900/10 bg-paper-50 p-6 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)]"
+            className="relative w-full max-w-sm rounded-2xl border border-ink-900/[0.06] bg-paper-50 p-6 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)]"
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-lg font-bold text-ink-900">{title}</h3>

@@ -18,7 +18,7 @@ export function BalanceWidget() {
       onClick={reveal}
       disabled={isRevealed || isRevealing}
       className={cn(
-        "flex h-9 items-center gap-1.5 rounded-full border border-ink-900/15 bg-paper-50 px-3 font-mono text-xs text-ink-700 transition-colors",
+        "flex h-9 items-center gap-1.5 rounded-full border border-ink-900/[0.08] bg-paper-50 px-3 font-mono text-xs text-ink-700 transition-colors",
         !isRevealed && "hover:border-accent-600/40",
       )}
       title={isRevealed ? "Your confidential balance" : "Click to reveal your balance"}

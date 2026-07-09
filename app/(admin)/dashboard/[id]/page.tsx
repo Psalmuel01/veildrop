@@ -178,8 +178,10 @@ export default function DistributionDetailPage() {
                   distribution.mode === "airdrop" ? (
                     <RecipientStatusRow
                       key={r.id}
+                      id={r.id}
                       address={r.address}
                       claimUrl={r.claimUrl ?? undefined}
+                      notifiedAt={r.notifiedAt}
                       onStatus={(claimed) => handleStatus(r.id, r.address, claimed)}
                     />
                   ) : (

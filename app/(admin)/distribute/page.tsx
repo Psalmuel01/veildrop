@@ -216,7 +216,9 @@ function DistributeWizard() {
         const origin = window.location.origin;
         claimLinks = airdropResult.claimLinks.map((c) => {
           const savedRecipient = saved.recipients.find((r) => r.address.toLowerCase() === c.address.toLowerCase());
-          return savedRecipient ? { ...c, url: `${origin}/claim/${savedRecipient.id}` } : c;
+          return savedRecipient
+            ? { ...c, url: `${origin}/claim/${savedRecipient.id}`, id: savedRecipient.id }
+            : c;
         });
       } catch (err) {
         toast({

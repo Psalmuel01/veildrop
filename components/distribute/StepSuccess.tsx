@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Check, Copy, Download, ExternalLink, Files } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, Files } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { ShareClaimLink } from "@/components/claim/ShareClaimLink";
 
 const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io/tx/";
 
@@ -12,6 +13,7 @@ export interface ClaimLinkEntry {
   address: string;
   amountDisplay: string;
   url: string;
+  id?: string;
 }
 
 export function StepSuccess({
@@ -45,12 +47,6 @@ export function StepSuccess({
 
   function escapeCsv(value: string) {
     return `"${value.replace(/"/g, '""')}"`;
-  }
-
-  function copyLink(url: string) {
-    navigator.clipboard.writeText(url);
-    setCopiedLinks((prev) => new Set(prev).add(url));
-    toast({ kind: "success", title: "Claim link copied" });
   }
 
   function copyAllLinks() {
@@ -137,13 +133,12 @@ export function StepSuccess({
                   <p className="truncate font-mono text-xs text-ink-900">{c.address}</p>
                   <p className="text-[11px] text-ink-500">{c.amountDisplay}</p>
                 </div>
-                <button
-                  onClick={() => copyLink(c.url)}
-                  className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-accent-600 hover:bg-accent-100"
-                >
-                  {copiedLinks.has(c.url) ? <Check className="size-3" /> : <Copy className="size-3" />}
-                  {copiedLinks.has(c.url) ? "Copied" : "Copy link"}
-                </button>
+                <ShareClaimLink
+                  url={c.url}
+                  recipientId={c.id}
+                  copied={copiedLinks.has(c.url)}
+                  onCopy={() => setCopiedLinks((prev) => new Set(prev).add(c.url))}
+                />
               </div>
             ))}
           </div>

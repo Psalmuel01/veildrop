@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { listDistributions, listDrafts, type ApiDistribution, type DraftDto } from "@/lib/api";
 import { TEMPLATES } from "@/lib/templates";
+import { formatAmount, toBaseUnits } from "@/lib/amount";
 
 function timeAgo(iso: string): string {
   const diffMinutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -36,6 +37,11 @@ function timeAgo(iso: string): string {
 
 function claimedTotal(distribution: ApiDistribution): number {
   return distribution.recipients.filter((recipient) => recipient.claimed).length;
+}
+
+function distributionTotalDisplay(distribution: ApiDistribution): string {
+  const totalRaw = distribution.recipients.reduce((sum, r) => sum + toBaseUnits(r.amountDisplay), 0n);
+  return `${formatAmount(totalRaw)} ${distribution.tokenSymbol}`;
 }
 
 function draftTitle(draft: DraftDto): string {
@@ -207,7 +213,9 @@ export default function DashboardPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-ink-900">{distribution.title}</p>
-                      <p className="mt-0.5 text-[11px] text-ink-500">
+                      <p className="mt-0.5 truncate text-[11px] text-ink-500">
+                        <span className="font-mono text-ink-700">{distributionTotalDisplay(distribution)}</span>
+                        {" · "}
                         {recipientCount} recipient{recipientCount !== 1 ? "s" : ""}
                         {" · "}
                         <span className="capitalize">{distribution.mode}</span>

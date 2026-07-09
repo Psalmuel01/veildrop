@@ -203,7 +203,9 @@ export default function DistributionDetailPage() {
                     >
                       <span className="truncate font-mono text-xs text-ink-900">{r.address}</span>
                       <div className="flex items-center gap-3">
-                        <EncryptedBadge />
+                        <span className="font-mono text-xs text-ink-500">
+                          {r.amountDisplay} {distribution.tokenSymbol}
+                        </span>
                         <span className="flex items-center gap-1 text-xs font-medium text-success-700">
                           <CheckCircle2 className="size-3.5" />
                           Delivered

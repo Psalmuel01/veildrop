@@ -16,6 +16,7 @@ import {
   Clock3,
   Users,
   FileEdit,
+  Copy,
 } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -101,12 +102,20 @@ export default function DashboardPage() {
           <p className="mt-1 text-sm text-ink-500">Monitor encrypted drops, claim progress, and operational history.</p>
         </div>
         {isConnected && isSepolia && distributions.length > 0 && (
-          <Link href="/distribute">
-            <Button>
-              New drop
-              <ArrowUpRight className="size-4" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/distribute?duplicate=${distributions[0]!.id}`}>
+              <Button variant="secondary">
+                <Copy className="size-4" />
+                Duplicate last
+              </Button>
+            </Link>
+            <Link href="/distribute">
+              <Button>
+                New drop
+                <ArrowUpRight className="size-4" />
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 

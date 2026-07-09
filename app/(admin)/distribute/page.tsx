@@ -17,10 +17,10 @@ import { StepReviewDisperse } from "@/components/distribute/StepReviewDisperse";
 import { StepReviewAirdrop, type AirdropSuccessResult } from "@/components/distribute/StepReviewAirdrop";
 import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
-import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
-import { createDistribution, upsertAddressBookEntry } from "@/lib/api";
+import { addManualRecipient, summarizeRecipients, type RecipientRow } from "@/lib/recipients";
+import { createDistribution, getDistribution, upsertAddressBookEntry } from "@/lib/api";
 import { loadLatestDraft, persistDraft, removeDraft } from "@/lib/distribution-drafts";
-import { getTokenConfig } from "@/lib/tokens";
+import { getTokenConfig, getTokenConfigByAddress } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
 import { useToast } from "@/components/ui/Toast";
@@ -94,8 +94,10 @@ function DistributeWizard() {
   const summary = summarizeRecipients(recipients);
   const validRecipients = recipients.filter((r) => r.isValidAddress && r.isValidAmount && !r.isDuplicate);
 
+  const duplicateId = searchParams.get("duplicate");
+
   useEffect(() => {
-    if (!address) return;
+    if (!address || duplicateId) return;
     let cancelled = false;
     loadLatestDraft(address).then((draft) => {
       if (cancelled || !draft) return;
@@ -113,7 +115,36 @@ function DistributeWizard() {
     return () => {
       cancelled = true;
     };
-  }, [address]);
+  }, [address, duplicateId]);
+
+  // "Duplicate last distribution" from the dashboard lands here with
+  // ?duplicate={id}. Seeds a fresh wizard from the source distribution
+  // instead of restoring a draft, since it's a new run, not a resume.
+  useEffect(() => {
+    if (!duplicateId) return;
+    let cancelled = false;
+    getDistribution(duplicateId).then((source) => {
+      if (cancelled || !source) return;
+      const sourceTemplate = TEMPLATES.some((t) => t.id === source.template)
+        ? source.template
+        : TEMPLATES[0]!.id;
+      setTemplateId(sourceTemplate);
+      setMode(source.mode);
+      setSelectedTokenId(getTokenConfigByAddress(source.token as `0x${string}`)?.id ?? "veil");
+      setConfig({ title: source.title, description: source.description ?? "", claimStart: "", claimEnd: "" });
+      setAutoTitle(source.title);
+      setRecipients(
+        source.recipients.reduce(
+          (rows, r) => addManualRecipient(rows, r.address, r.amountDisplay),
+          [] as RecipientRow[],
+        ),
+      );
+      setStep(1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [duplicateId]);
 
   // Debounced two seconds after the last change, so navigating between steps
   // or typing doesn't fire an API call on every keystroke.
@@ -334,6 +365,7 @@ function DistributeWizard() {
               onChange={setRecipients}
               tokenSymbol={selectedToken.symbol}
               recipientLabel={template.copy.recipientLabel}
+              ownerAddress={address}
             />
           )}
           {step === 3 &&

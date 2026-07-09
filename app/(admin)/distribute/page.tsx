@@ -19,7 +19,7 @@ import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
 import { createDistribution, upsertAddressBookEntry } from "@/lib/api";
-import { clearDistributionDraft, loadDistributionDraft, saveDistributionDraft } from "@/lib/distribution-drafts";
+import { loadLatestDraft, persistDraft, removeDraft } from "@/lib/distribution-drafts";
 import { getTokenConfig } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
@@ -85,8 +85,9 @@ function DistributeWizard() {
   const [autoTitle, setAutoTitle] = useState(initialTemplate.copy.title);
   const [recipients, setRecipients] = useState<RecipientRow[]>([]);
   const [result, setResult] = useState<WizardResult | null>(null);
-  const [draftLoadedAt, setDraftLoadedAt] = useState<number | null>(null);
-  const [draftStatus, setDraftStatus] = useState<"idle" | "saved">("idle");
+  const [draftId, setDraftId] = useState<string | undefined>(undefined);
+  const [draftLoadedAt, setDraftLoadedAt] = useState<string | null>(null);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
   const selectedToken = getTokenConfig(selectedTokenId);
@@ -95,37 +96,44 @@ function DistributeWizard() {
 
   useEffect(() => {
     if (!address) return;
-    const draft = loadDistributionDraft(address);
-    if (!draft) return;
-    setStep(Math.min(draft.step, 3));
-    setTemplateId(TEMPLATES.some((t) => t.id === draft.templateId) ? draft.templateId : TEMPLATES[0]!.id);
-    setMode(draft.mode);
-    setSelectedTokenId(draft.selectedTokenId || "veil");
-    setConfig(draft.config);
-    const restoredTemplate = TEMPLATES.find((t) => t.id === draft.templateId) ?? TEMPLATES[0]!;
-    setAutoTitle(restoredTemplate.copy.title);
-    setRecipients(draft.recipients);
-    setDraftLoadedAt(draft.updatedAt);
+    let cancelled = false;
+    loadLatestDraft(address).then((draft) => {
+      if (cancelled || !draft) return;
+      setDraftId(draft.id);
+      setStep(Math.min(draft.step, 3));
+      setTemplateId(TEMPLATES.some((t) => t.id === draft.templateId) ? draft.templateId : TEMPLATES[0]!.id);
+      setMode(draft.mode);
+      setSelectedTokenId(draft.selectedTokenId || "veil");
+      setConfig(draft.config);
+      const restoredTemplate = TEMPLATES.find((t) => t.id === draft.templateId) ?? TEMPLATES[0]!;
+      setAutoTitle(restoredTemplate.copy.title);
+      setRecipients(draft.recipients);
+      setDraftLoadedAt(draft.updatedAt);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [address]);
 
+  // Debounced two seconds after the last change, so navigating between steps
+  // or typing doesn't fire an API call on every keystroke.
   useEffect(() => {
     if (!address || result || step >= 4) return;
-    saveDistributionDraft(address, {
-      step,
-      templateId,
-      mode,
-      selectedTokenId,
-      config,
-      recipients,
-      updatedAt: Date.now(),
-    });
-    setDraftStatus("saved");
-    const timeout = window.setTimeout(() => setDraftStatus("idle"), 1800);
+    setDraftStatus("saving");
+    const timeout = window.setTimeout(() => {
+      persistDraft(address, draftId, { step, templateId, mode, selectedTokenId, config, recipients }).then(
+        (saved) => {
+          setDraftId(saved.id);
+          setDraftStatus("saved");
+        },
+      );
+    }, 2000);
     return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, step, templateId, mode, selectedTokenId, config, recipients, result]);
 
   function discardDraft() {
-    if (address) clearDistributionDraft(address);
+    if (draftId) removeDraft(draftId);
     const initial = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
     setStep(0);
     setTemplateId(initial.id);
@@ -135,6 +143,7 @@ function DistributeWizard() {
     setAutoTitle(initial.copy.title);
     setRecipients([]);
     setResult(null);
+    setDraftId(undefined);
     setDraftLoadedAt(null);
   }
 
@@ -180,7 +189,7 @@ function DistributeWizard() {
         });
       }
       rememberRecipients();
-      clearDistributionDraft(address);
+      if (draftId) removeDraft(draftId);
     }
     setResult({ mode: "disperse", txHash, recipientCount: validRecipients.length });
     setStep(4);
@@ -228,7 +237,7 @@ function DistributeWizard() {
         });
       }
       rememberRecipients();
-      clearDistributionDraft(address);
+      if (draftId) removeDraft(draftId);
     }
     setResult({
       mode: "airdrop",
@@ -274,6 +283,8 @@ function DistributeWizard() {
             <span>
               Draft restored from {new Date(draftLoadedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
             </span>
+          ) : draftStatus === "saving" ? (
+            <span>Saving draft…</span>
           ) : draftStatus === "saved" ? (
             <span>Draft saved</span>
           ) : (

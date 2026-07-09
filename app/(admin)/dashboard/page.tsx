@@ -15,12 +15,14 @@ import {
   CheckCircle2,
   Clock3,
   Users,
+  FileEdit,
 } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { listDistributions, type ApiDistribution } from "@/lib/api";
+import { listDistributions, listDrafts, type ApiDistribution, type DraftDto } from "@/lib/api";
+import { TEMPLATES } from "@/lib/templates";
 
 function timeAgo(iso: string): string {
   const diffMinutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -33,6 +35,12 @@ function timeAgo(iso: string): string {
 
 function claimedTotal(distribution: ApiDistribution): number {
   return distribution.recipients.filter((recipient) => recipient.claimed).length;
+}
+
+function draftTitle(draft: DraftDto): string {
+  const formState = draft.formState as { config?: { title?: string } } | null;
+  const templateTitle = TEMPLATES.find((t) => t.id === draft.template)?.copy.title;
+  return formState?.config?.title || templateTitle || "Untitled distribution";
 }
 
 function StatCard({
@@ -63,6 +71,7 @@ export default function DashboardPage() {
   const isSepolia = chainId === sepolia.id;
   const [distributions, setDistributions] = useState<ApiDistribution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [drafts, setDrafts] = useState<DraftDto[]>([]);
 
   useEffect(() => {
     if (!address) return;
@@ -70,6 +79,7 @@ export default function DashboardPage() {
     listDistributions(address)
       .then(setDistributions)
       .finally(() => setIsLoading(false));
+    listDrafts(address).then(setDrafts);
   }, [address]);
 
   const totalRecipients = distributions.reduce((sum, distribution) => sum + distribution.recipients.length, 0);
@@ -99,6 +109,33 @@ export default function DashboardPage() {
           </Link>
         )}
       </div>
+
+      {isConnected && isSepolia && drafts.length > 0 && (
+        <div className="mb-6 rounded-xl border border-accent-600/25 bg-accent-100/30 p-5">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink-900">
+            <FileEdit className="size-4 text-accent-600" />
+            Continue draft
+          </h2>
+          <div className="flex flex-col gap-2.5">
+            {drafts.map((draft) => (
+              <Link
+                key={draft.id}
+                href="/distribute"
+                className="group flex items-center gap-3.5 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-3.5 transition-all hover:-translate-y-0.5 hover:border-accent-600/40"
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink-900/[0.05] text-ink-600 transition-colors group-hover:bg-accent-600/10 group-hover:text-accent-600">
+                  {draft.mode === "disperse" ? <Send className="size-4" /> : <Gift className="size-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink-900">{draftTitle(draft)}</p>
+                  <p className="mt-0.5 text-[11px] text-ink-500">Last edited {timeAgo(draft.updatedAt)}</p>
+                </div>
+                <ArrowUpRight className="size-4 shrink-0 text-ink-500 transition-colors group-hover:text-accent-600" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!isConnected ? (
         <Card>

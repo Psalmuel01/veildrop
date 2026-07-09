@@ -77,6 +77,10 @@ function DistributeWizard() {
     claimStart: "",
     claimEnd: "",
   });
+  // Tracks the last title a template auto-filled, so switching templates
+  // keeps updating the title right up until the user types their own,
+  // instead of only ever applying on the very first pick.
+  const [autoTitle, setAutoTitle] = useState(initialTemplate.copy.title);
   const [recipients, setRecipients] = useState<RecipientRow[]>([]);
   const [result, setResult] = useState<WizardResult | null>(null);
   const [draftLoadedAt, setDraftLoadedAt] = useState<number | null>(null);
@@ -96,6 +100,8 @@ function DistributeWizard() {
     setMode(draft.mode);
     setSelectedTokenId(draft.selectedTokenId || "veil");
     setConfig(draft.config);
+    const restoredTemplate = TEMPLATES.find((t) => t.id === draft.templateId) ?? TEMPLATES[0]!;
+    setAutoTitle(restoredTemplate.copy.title);
     setRecipients(draft.recipients);
     setDraftLoadedAt(draft.updatedAt);
   }, [address]);
@@ -124,6 +130,7 @@ function DistributeWizard() {
     setMode(initial.defaultMode);
     setSelectedTokenId("veil");
     setConfig({ title: initial.copy.title, description: "", claimStart: "", claimEnd: "" });
+    setAutoTitle(initial.copy.title);
     setRecipients([]);
     setResult(null);
     setDraftLoadedAt(null);
@@ -234,7 +241,13 @@ function DistributeWizard() {
               onSelect={(id) => {
                 setTemplateId(id);
                 const t = TEMPLATES.find((tt) => tt.id === id)!;
-                setConfig((c) => ({ ...c, title: c.title || t.copy.title }));
+                setConfig((c) => {
+                  // Keep auto-filling the title as the user browses templates,
+                  // but stop the moment they've typed something of their own.
+                  if (c.title !== "" && c.title !== autoTitle) return c;
+                  return { ...c, title: t.copy.title };
+                });
+                setAutoTitle(t.copy.title);
               }}
               onModeChange={setMode}
             />

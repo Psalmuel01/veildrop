@@ -55,7 +55,10 @@ export function StepSuccess({
 
   function copyAllLinks() {
     if (!claimLinks) return;
-    navigator.clipboard.writeText(claimLinks.map((c) => `${c.address} ${c.url}`).join("\n"));
+    // Pure URLs only, one per line, so each is directly usable on its own
+    // (e.g. pasted straight into a browser or messaging app). The address
+    // mapping lives in the CSV download instead.
+    navigator.clipboard.writeText(claimLinks.map((c) => c.url).join("\n"));
     setCopiedLinks(new Set(claimLinks.map((c) => c.url)));
     setHasExportedLinks(true);
     toast({ kind: "success", title: "All claim links copied" });

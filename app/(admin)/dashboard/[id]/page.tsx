@@ -10,7 +10,7 @@ import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
 import { RecipientStatusRow } from "@/components/dashboard/RecipientStatusRow";
-import { loadDistributions, type StoredDistribution } from "@/lib/distributions";
+import { loadDistributions, updateDistribution, type StoredDistribution } from "@/lib/distributions";
 
 const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io/tx/";
 
@@ -26,11 +26,28 @@ export default function DistributionDetailPage() {
     if (!address) return;
     const found = loadDistributions(address).find((d) => d.id === params.id);
     setDistribution(found ?? null);
+    if (found) {
+      claimedByAddress.current = new Map(found.recipients.map((r) => [r.address, r.claimed]));
+      setClaimedCount(found.recipients.filter((r) => r.claimed).length);
+    }
   }, [address, params.id]);
 
+  // The claim status here comes from a live on-chain check (see
+  // RecipientStatusRow), which is the only place that knows the real state.
+  // Persist it back to localStorage so the main dashboard list reflects it
+  // too, instead of only ever showing the stale "unclaimed" snapshot that
+  // was written when the airdrop was first created.
   function handleStatus(recipientAddress: string, claimed: boolean) {
+    const alreadyKnown = claimedByAddress.current.get(recipientAddress);
     claimedByAddress.current.set(recipientAddress, claimed);
     setClaimedCount(Array.from(claimedByAddress.current.values()).filter(Boolean).length);
+
+    if (!address || !distribution || alreadyKnown === claimed) return;
+    const nextRecipients = distribution.recipients.map((r) =>
+      r.address === recipientAddress ? { ...r, claimed } : r,
+    );
+    updateDistribution(address, distribution.id, { recipients: nextRecipients });
+    setDistribution((d) => (d ? { ...d, recipients: nextRecipients } : d));
   }
 
   return (

@@ -8,13 +8,15 @@ export function AddressBookPanel({
   ownerAddress,
   existingAddresses,
   onAdd,
+  defaultExpanded,
 }: {
   ownerAddress?: string;
   existingAddresses: string[];
   onAdd: (address: string, amountDisplay: string) => void;
+  defaultExpanded?: boolean;
 }) {
   const [entries, setEntries] = useState<AddressBookEntryDto[]>([]);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(!!defaultExpanded);
 
   useEffect(() => {
     if (!ownerAddress) return;

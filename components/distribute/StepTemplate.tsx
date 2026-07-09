@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, History } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
+
+function timeAgo(iso: string): string {
+  const diffMinutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (diffMinutes < 1) return "just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
+}
 
 export function StepTemplate({
   selectedId,
   mode,
   onSelect,
   onModeChange,
+  lastRunByTemplate,
 }: {
   selectedId: string;
   mode: DistributionMode;
   onSelect: (templateId: string) => void;
   onModeChange: (mode: DistributionMode) => void;
+  lastRunByTemplate?: Record<string, string>;
 }) {
   const template = TEMPLATES.find((t) => t.id === selectedId);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -55,6 +66,12 @@ export function StepTemplate({
               </div>
               <h3 className="font-display text-base font-semibold text-ink-900">{t.name}</h3>
               <p className="text-xs text-ink-500">{t.description}</p>
+              {lastRunByTemplate?.[t.id] && (
+                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-accent-600">
+                  <History className="size-3" />
+                  You last ran this {timeAgo(lastRunByTemplate[t.id]!)}
+                </p>
+              )}
             </button>
           );
         })}

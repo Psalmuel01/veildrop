@@ -12,7 +12,7 @@ export interface DistributionConfig {
   claimEnd: string;
 }
 
-function defaultDateTimeLocal(offsetMinutes: number): string {
+export function defaultDateTimeLocal(offsetMinutes: number): string {
   const d = new Date(Date.now() + offsetMinutes * 60_000);
   d.setSeconds(0, 0);
   return d.toISOString().slice(0, 16);

@@ -11,14 +11,14 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StepTemplate } from "@/components/distribute/StepTemplate";
-import { StepConfigure, type DistributionConfig } from "@/components/distribute/StepConfigure";
+import { StepConfigure, defaultDateTimeLocal, type DistributionConfig } from "@/components/distribute/StepConfigure";
 import { StepRecipients } from "@/components/distribute/StepRecipients";
 import { StepReviewDisperse } from "@/components/distribute/StepReviewDisperse";
 import { StepReviewAirdrop, type AirdropSuccessResult } from "@/components/distribute/StepReviewAirdrop";
 import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { addManualRecipient, summarizeRecipients, type RecipientRow } from "@/lib/recipients";
-import { createDistribution, getDistribution, upsertAddressBookEntry } from "@/lib/api";
+import { createDistribution, getDistribution, listDistributions, upsertAddressBookEntry } from "@/lib/api";
 import { loadLatestDraft, persistDraft, removeDraft } from "@/lib/distribution-drafts";
 import { getTokenConfig, getTokenConfigByAddress } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
@@ -34,6 +34,10 @@ interface WizardResult {
 }
 
 const STEPS = ["Use case", "Configure", "Recipients", "Review", "Done"] as const;
+
+function templateClaimEnd(template: (typeof TEMPLATES)[number]): string {
+  return template.defaultClaimWindowDays ? defaultDateTimeLocal(60 * 24 * template.defaultClaimWindowDays) : "";
+}
 
 function Stepper({ step }: { step: number }) {
   return (
@@ -75,19 +79,22 @@ function DistributeWizard() {
   const [selectedTokenId, setSelectedTokenId] = useState<string>("veil");
   const [config, setConfig] = useState<DistributionConfig>({
     title: initialTemplate.copy.title,
-    description: "",
+    description: initialTemplate.copy.description,
     claimStart: "",
-    claimEnd: "",
+    claimEnd: templateClaimEnd(initialTemplate),
   });
-  // Tracks the last title a template auto-filled, so switching templates
-  // keeps updating the title right up until the user types their own,
-  // instead of only ever applying on the very first pick.
+  // Tracks the last value a template auto-filled for each field, so switching
+  // templates keeps updating them right up until the user makes their own
+  // edit, instead of only ever applying on the very first pick.
   const [autoTitle, setAutoTitle] = useState(initialTemplate.copy.title);
+  const [autoDescription, setAutoDescription] = useState(initialTemplate.copy.description);
+  const [autoClaimEnd, setAutoClaimEnd] = useState(templateClaimEnd(initialTemplate));
   const [recipients, setRecipients] = useState<RecipientRow[]>([]);
   const [result, setResult] = useState<WizardResult | null>(null);
   const [draftId, setDraftId] = useState<string | undefined>(undefined);
   const [draftLoadedAt, setDraftLoadedAt] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [lastRunByTemplate, setLastRunByTemplate] = useState<Record<string, string>>({});
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
   const selectedToken = getTokenConfig(selectedTokenId);
@@ -95,6 +102,16 @@ function DistributeWizard() {
   const validRecipients = recipients.filter((r) => r.isValidAddress && r.isValidAmount && !r.isDuplicate);
 
   const duplicateId = searchParams.get("duplicate");
+
+  useEffect(() => {
+    if (!address) return;
+    listDistributions(address).then((all) => {
+      const map: Record<string, string> = {};
+      // API returns newest first, so the first hit per template is the most recent.
+      for (const d of all) if (!map[d.template]) map[d.template] = d.createdAt;
+      setLastRunByTemplate(map);
+    });
+  }, [address]);
 
   useEffect(() => {
     if (!address || duplicateId) return;
@@ -109,6 +126,8 @@ function DistributeWizard() {
       setConfig(draft.config);
       const restoredTemplate = TEMPLATES.find((t) => t.id === draft.templateId) ?? TEMPLATES[0]!;
       setAutoTitle(restoredTemplate.copy.title);
+      setAutoDescription(restoredTemplate.copy.description);
+      setAutoClaimEnd(templateClaimEnd(restoredTemplate));
       setRecipients(draft.recipients);
       setDraftLoadedAt(draft.updatedAt);
     });
@@ -133,6 +152,8 @@ function DistributeWizard() {
       setSelectedTokenId(getTokenConfigByAddress(source.token as `0x${string}`)?.id ?? "veil");
       setConfig({ title: source.title, description: source.description ?? "", claimStart: "", claimEnd: "" });
       setAutoTitle(source.title);
+      setAutoDescription(source.description ?? "");
+      setAutoClaimEnd("");
       setRecipients(
         source.recipients.reduce(
           (rows, r) => addManualRecipient(rows, r.address, r.amountDisplay),
@@ -170,8 +191,15 @@ function DistributeWizard() {
     setTemplateId(initial.id);
     setMode(initial.defaultMode);
     setSelectedTokenId("veil");
-    setConfig({ title: initial.copy.title, description: "", claimStart: "", claimEnd: "" });
+    setConfig({
+      title: initial.copy.title,
+      description: initial.copy.description,
+      claimStart: "",
+      claimEnd: templateClaimEnd(initial),
+    });
     setAutoTitle(initial.copy.title);
+    setAutoDescription(initial.copy.description);
+    setAutoClaimEnd(templateClaimEnd(initial));
     setRecipients([]);
     setResult(null);
     setDraftId(undefined);
@@ -336,16 +364,23 @@ function DistributeWizard() {
             <StepTemplate
               selectedId={templateId}
               mode={mode}
+              lastRunByTemplate={lastRunByTemplate}
               onSelect={(id) => {
                 setTemplateId(id);
                 const t = TEMPLATES.find((tt) => tt.id === id)!;
-                setConfig((c) => {
-                  // Keep auto-filling the title as the user browses templates,
+                const claimEnd = templateClaimEnd(t);
+                setConfig((c) => ({
+                  ...c,
+                  // Keep auto-filling each field as the user browses templates,
                   // but stop the moment they've typed something of their own.
-                  if (c.title !== "" && c.title !== autoTitle) return c;
-                  return { ...c, title: t.copy.title };
-                });
+                  title: c.title !== "" && c.title !== autoTitle ? c.title : t.copy.title,
+                  description:
+                    c.description !== "" && c.description !== autoDescription ? c.description : t.copy.description,
+                  claimEnd: c.claimEnd !== "" && c.claimEnd !== autoClaimEnd ? c.claimEnd : claimEnd,
+                }));
                 setAutoTitle(t.copy.title);
+                setAutoDescription(t.copy.description);
+                setAutoClaimEnd(claimEnd);
               }}
               onModeChange={setMode}
             />
@@ -366,6 +401,7 @@ function DistributeWizard() {
               tokenSymbol={selectedToken.symbol}
               recipientLabel={template.copy.recipientLabel}
               ownerAddress={address}
+              addressBookFirst={template.addressBookFirst}
             />
           )}
           {step === 3 &&

@@ -12,12 +12,14 @@ export function StepRecipients({
   tokenSymbol,
   recipientLabel,
   ownerAddress,
+  addressBookFirst,
 }: {
   rows: RecipientRow[];
   onChange: (rows: RecipientRow[]) => void;
   tokenSymbol: string;
   recipientLabel: string;
   ownerAddress?: string;
+  addressBookFirst?: boolean;
 }) {
   const [importSummary, setImportSummary] = useState<{ total: number; invalid: number } | null>(null);
 
@@ -61,6 +63,7 @@ export function StepRecipients({
         ownerAddress={ownerAddress}
         existingAddresses={rows.map((r) => r.address)}
         onAdd={handleAddFromBook}
+        defaultExpanded={addressBookFirst}
       />
 
       <RecipientsTable

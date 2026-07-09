@@ -1,26 +1,17 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { ShieldCheck, ShieldAlert, CheckCircle2, ExternalLink, Wallet, AlertTriangle } from "lucide-react";
-import type { Hex } from "viem";
-import { useClaim, useGetClaimAmount, useAirdropIsSignatureClaimed, useAirdropToken } from "@tokenops/sdk/fhe-airdrop/react";
+import { ShieldCheck, ShieldAlert, Wallet, AlertTriangle } from "lucide-react";
+import { useFaucetMetadata } from "@tokenops/sdk/testnet-faucet/react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { RevealAmount } from "@/components/RevealAmount";
-import { useToast } from "@/components/ui/Toast";
-import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
+import { ClaimFlow } from "@/components/claim/ClaimFlow";
 import { useIsZamaReady } from "@/app/providers";
-import { decodeClaimPayload, type ClaimPayload } from "@/lib/claim-link";
-import { formatAmount } from "@/lib/amount";
-import { getTokenConfigByAddress } from "@/lib/tokens";
-
-const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io/tx/";
+import { decodeClaimPayload } from "@/lib/claim-link";
 
 function ErrorState({ title, message }: { title: string; message: string }) {
   return (
@@ -34,121 +25,12 @@ function ErrorState({ title, message }: { title: string; message: string }) {
   );
 }
 
-/**
- * Every hook here (directly or via useDecryptedHandle) needs a live
- * ZamaProvider, which only mounts once the wallet is connected on Sepolia,
- * so this must only ever be rendered on that happy path, never at the top of
- * ClaimPortalContent (rules of hooks would still fire useZamaSDK internally
- * even inside a branch that isn't shown, since the component itself mounts).
- */
-function ClaimActions({ payload }: { payload: ClaimPayload }) {
-  const { push: toast } = useToast();
-  const queryClient = useQueryClient();
-  const [viewHandle, setViewHandle] = useState<Hex | undefined>();
-
-  const { data: tokenAddress } = useAirdropToken({ address: payload.airdrop });
-  const tokenConfig = tokenAddress ? getTokenConfigByAddress(tokenAddress) : undefined;
-  const tokenSymbol = tokenConfig?.symbol ?? "CTTT";
-
-  const { data: isClaimed, isLoading: isCheckingClaimed } = useAirdropIsSignatureClaimed({
-    address: payload.airdrop,
-    user: payload.recipient,
-    encryptedAmountHandle: payload.handle,
-  });
-
-  const claim = useClaim({ address: payload.airdrop });
-  const getClaimAmount = useGetClaimAmount({ address: payload.airdrop });
-  const decrypted = useDecryptedHandle(viewHandle, payload.airdrop);
-
-  useEffect(() => {
-    if (viewHandle && !decrypted.isRevealed && !decrypted.isRevealing) {
-      decrypted.reveal();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewHandle]);
-
-  async function handleDecryptClick() {
-    if (viewHandle) {
-      decrypted.reveal();
-      return;
-    }
-    try {
-      const res = await getClaimAmount.mutateAsync({
-        encryptedInput: { handle: payload.handle, inputProof: payload.inputProof },
-        signature: payload.signature,
-      });
-      setViewHandle(res.handle);
-    } catch (err) {
-      toast({
-        kind: "error",
-        title: "Couldn't unlock allocation",
-        description: err instanceof Error ? err.message : undefined,
-      });
-    }
-  }
-
-  function handleClaim() {
-    claim.mutate(
-      { encryptedInput: { handle: payload.handle, inputProof: payload.inputProof }, signature: payload.signature },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["tokenops-sdk", "fhe-airdrop"] });
-          toast({ kind: "success", title: "Claimed. Tokens are in your wallet." });
-        },
-        onError: (err) => toast({ kind: "error", title: "Claim failed", description: err.message }),
-      },
-    );
-  }
-
-  const revealStatus = decrypted.isRevealed
-    ? "revealed"
-    : getClaimAmount.isPending || decrypted.isRevealing
-      ? "decrypting"
-      : "masked";
-
-  return (
-    <>
-      <RevealAmount
-        status={revealStatus}
-        value={decrypted.value !== undefined ? formatAmount(decrypted.value) : undefined}
-        symbol={tokenSymbol}
-        onDecrypt={handleDecryptClick}
-      />
-
-      <div className="border-t border-ink-900/[0.05] pt-6">
-        {isCheckingClaimed ? (
-          <Skeleton className="h-11 w-full" />
-        ) : isClaimed ? (
-          <div className="flex items-center justify-center gap-2 rounded-lg bg-success-100 py-3 text-sm font-medium text-success-700">
-            <CheckCircle2 className="size-4" />
-            Claimed to your wallet
-          </div>
-        ) : (
-          <Button size="lg" className="w-full" onClick={handleClaim} isLoading={claim.isPending}>
-            {claim.isPending ? "Claiming…" : "Claim tokens to my wallet"}
-          </Button>
-        )}
-        {claim.isSuccess && (
-          <a
-            href={`${SEPOLIA_EXPLORER}${claim.data}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex items-center justify-center gap-1.5 text-xs text-ink-500 hover:text-ink-900"
-          >
-            View transaction
-            <ExternalLink className="size-3" />
-          </a>
-        )}
-      </div>
-    </>
-  );
-}
-
 function ClaimPortalContent() {
   const searchParams = useSearchParams();
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
   const isZamaReady = useIsZamaReady();
+  const { data: meta } = useFaucetMetadata();
 
   const encoded = searchParams.get("payload");
   const payload = encoded ? decodeClaimPayload(encoded) : null;
@@ -205,7 +87,7 @@ function ClaimPortalContent() {
           ) : !isZamaReady ? (
             <Skeleton className="h-72 w-full" />
           ) : (
-            <ClaimActions payload={payload} />
+            <ClaimFlow payload={payload} tokenSymbol={meta?.confidential.symbol ?? "CTTT"} />
           )}
         </CardContent>
       </Card>

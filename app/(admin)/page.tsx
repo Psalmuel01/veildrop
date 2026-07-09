@@ -42,11 +42,6 @@ export default function Home() {
         </span>
 
         <div className="relative mx-auto max-w-5xl">
-          {/*
-            Pending check is stubbed today (always empty) and runs silently
-            in the background. Once GET /api/recipients/pending exists, this
-            banner will surface real pending claims without changing layout.
-          */}
           <PendingBanner />
 
           <div className="flex justify-center">

@@ -187,9 +187,14 @@ function DistributeWizard() {
   }
 
   async function handleAirdropSuccess(airdropResult: AirdropSuccessResult) {
+    // Default to the original payload-encoded links, always valid on their
+    // own. Upgraded to shorter /claim/[id] links below once the backend
+    // confirms the save and hands back real recipient ids.
+    let claimLinks = airdropResult.claimLinks;
+
     if (address) {
       try {
-        await createDistribution({
+        const saved = await createDistribution({
           adminAddress: address,
           mode: "airdrop",
           template: templateId,
@@ -208,6 +213,11 @@ function DistributeWizard() {
             claimed: false,
           })),
         });
+        const origin = window.location.origin;
+        claimLinks = airdropResult.claimLinks.map((c) => {
+          const savedRecipient = saved.recipients.find((r) => r.address.toLowerCase() === c.address.toLowerCase());
+          return savedRecipient ? { ...c, url: `${origin}/claim/${savedRecipient.id}` } : c;
+        });
       } catch (err) {
         toast({
           kind: "error",
@@ -222,7 +232,7 @@ function DistributeWizard() {
       mode: "airdrop",
       txHash: airdropResult.txHash,
       recipientCount: validRecipients.length,
-      claimLinks: airdropResult.claimLinks,
+      claimLinks,
     });
     setStep(4);
   }

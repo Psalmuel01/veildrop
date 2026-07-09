@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Distribution {
+  id               String      @id @default(cuid())
+  adminAddress     String
+  mode             String
+  template         String
+  title            String
+  description      String?
+  token            String
+  tokenSymbol      String
+  txHash           String?
+  contractAddress  String?
+  claimWindowStart DateTime?
+  claimWindowEnd   DateTime?
+  status           String      @default("active")
+  createdAt        DateTime    @default(now())
+  recipients       Recipient[]
+
+  @@index([adminAddress])
+}
+
+// A single recipient row within a distribution. For disperse mode, claimed
+// defaults to true at creation since tokens are pushed directly with nothing
+// left for the recipient to do. For airdrop mode, claimUrl carries the same
+// payload-encoded link the existing stateless /claim flow already uses, so
+// /claim/[id] can resolve it without duplicating the encrypt and sign logic.
+model Recipient {
+  id             String       @id @default(cuid())
+  distributionId String
+  distribution   Distribution @relation(fields: [distributionId], references: [id])
+  address        String
+  amountDisplay  String
+  claimUrl       String?
+  claimed        Boolean      @default(false)
+  claimedAt      DateTime?
+  revealed       Boolean      @default(false)
+  revealedAt     DateTime?
+  notifiedAt     DateTime?
+  txHash         String?
+  createdAt      DateTime     @default(now())
+
+  @@index([address])
+  @@index([distributionId])
+}
+
+model AddressBookEntry {
+  id           String   @id @default(cuid())
+  ownerAddress String
+  address      String
+  label        String?
+  lastAmount   String?
+  useCount     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([ownerAddress, address])
+  @@index([ownerAddress])
+}
+
+model Draft {
+  id           String   @id @default(cuid())
+  ownerAddress String
+  mode         String
+  template     String
+  formState    Json
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@index([ownerAddress])
+}

@@ -1,4 +1,8 @@
+import { requireConfidentialTestTokenAddress } from "@tokenops/sdk";
 import deployedVeilToken from "../contracts/deployments/sepolia.json";
+
+// This app only ever runs against Sepolia, see lib/wagmi.ts.
+const SEPOLIA_CHAIN_ID = 11155111;
 
 export interface TokenConfig {
     id: string;
@@ -22,7 +26,7 @@ export const CTTT_TOKEN: TokenConfig = {
     id: "cttt",
     name: "TokenOps Test Token",
     symbol: "CTTT",
-    address: "0xC1b633b0b066e8cCDdCbFE14E88d89A0a9B64f5a",
+    address: requireConfidentialTestTokenAddress(SEPOLIA_CHAIN_ID),
     decimals: 6,
     description: "TokenOps' widely recognized confidential test token.",
 };

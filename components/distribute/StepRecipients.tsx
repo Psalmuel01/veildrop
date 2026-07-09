@@ -3,18 +3,23 @@
 import { useState } from "react";
 import { CsvUploader } from "@/components/distribute/CsvUploader";
 import { RecipientsTable } from "@/components/distribute/RecipientsTable";
-import { isRowValid, parseRecipientsCsv, type RecipientRow } from "@/lib/recipients";
+import { AddressBookPanel } from "@/components/distribute/AddressBookPanel";
+import { addManualRecipient, isRowValid, parseRecipientsCsv, type RecipientRow } from "@/lib/recipients";
 
 export function StepRecipients({
   rows,
   onChange,
   tokenSymbol,
   recipientLabel,
+  ownerAddress,
+  addressBookFirst,
 }: {
   rows: RecipientRow[];
   onChange: (rows: RecipientRow[]) => void;
   tokenSymbol: string;
   recipientLabel: string;
+  ownerAddress?: string;
+  addressBookFirst?: boolean;
 }) {
   const [importSummary, setImportSummary] = useState<{ total: number; invalid: number } | null>(null);
 
@@ -22,6 +27,10 @@ export function StepRecipients({
     const parsed = parseRecipientsCsv(csv);
     setImportSummary({ total: parsed.length, invalid: parsed.filter((row) => !isRowValid(row)).length });
     onChange(parsed);
+  }
+
+  function handleAddFromBook(address: string, amountDisplay: string) {
+    onChange(addManualRecipient(rows, address, amountDisplay));
   }
 
   return (
@@ -49,6 +58,13 @@ export function StepRecipients({
           </div>
         )}
       </div>
+
+      <AddressBookPanel
+        ownerAddress={ownerAddress}
+        existingAddresses={rows.map((r) => r.address)}
+        onAdd={handleAddFromBook}
+        defaultExpanded={addressBookFirst}
+      />
 
       <RecipientsTable
         rows={rows}

@@ -1,5 +1,5 @@
 import Papa from "papaparse";
-import { isAddress, getAddress } from "viem";
+import { getAddress } from "viem";
 import { toBaseUnits } from "./amount";
 
 export interface RecipientRow {
@@ -16,29 +16,43 @@ function makeId() {
   return crypto.randomUUID();
 }
 
-function validateAddress(address: string): boolean {
-  const trimmed = address.trim();
-  if (!isAddress(trimmed, { strict: false })) return false;
-  // Reject mixed-case addresses whose case doesn't match the EIP-55 checksum.
-  // This is usually a copy/paste typo rather than an intentional all-lowercase address.
-  const isAllLower = trimmed === trimmed.toLowerCase();
-  const isAllUpper = trimmed === trimmed.toUpperCase();
-  if (isAllLower || isAllUpper) return true;
+// Validates AND canonicalizes an address via viem's getAddress. Note that
+// getAddress alone never rejects a checksum mismatch, it silently rewrites
+// mixed-case input to the correct checksum, so a genuine mixed-case typo
+// (a copy/paste error) would otherwise be "fixed" into a different-looking
+// address without ever telling the admin. To actually enforce the checksum,
+// compare the mixed-case input against its own checksummed form and reject
+// on mismatch. All-lowercase/all-uppercase input has no checksum to check,
+// so it's accepted and normalized (it's usually an intentional export
+// format, not a typo). Malformed hex/length always fails via getAddress
+// throwing. Returns null when invalid.
+function normalizeAddress(address: string): string | null {
+  let checksummed: string;
   try {
-    return getAddress(trimmed) === trimmed;
+    checksummed = getAddress(address);
   } catch {
-    return false;
+    return null;
   }
+  const body = address.slice(2);
+  const isMixedCase = body !== body.toLowerCase() && body !== body.toUpperCase();
+  if (isMixedCase && address !== checksummed) return null;
+  return checksummed;
 }
 
 function buildRow(address: string, amountDisplay: string): RecipientRow {
   const amountRaw = toBaseUnits(amountDisplay);
+  const trimmed = address.trim();
+  const normalized = normalizeAddress(trimmed);
   return {
     id: makeId(),
-    address: address.trim(),
+    // Store the canonical checksummed form when valid, so every downstream
+    // consumer, including the FHE encrypt/sign calls, gets a well-formed
+    // address instead of whatever casing happened to be in the CSV. Keep
+    // the raw input when invalid, so the admin can see and fix their typo.
+    address: normalized ?? trimmed,
     amountDisplay: amountDisplay.trim(),
     amountRaw,
-    isValidAddress: validateAddress(address),
+    isValidAddress: normalized !== null,
     isDuplicate: false,
     isValidAmount: amountRaw > 0n,
   };

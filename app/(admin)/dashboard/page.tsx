@@ -15,14 +15,19 @@ import {
   CheckCircle2,
   Clock3,
   Users,
+  FileEdit,
+  Copy,
 } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { loadDistributions, type StoredDistribution } from "@/lib/distributions";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { listDistributions, listDrafts, type ApiDistribution, type DraftDto } from "@/lib/api";
+import { TEMPLATES } from "@/lib/templates";
+import { formatAmount, toBaseUnits } from "@/lib/amount";
 
-function timeAgo(ts: number): string {
-  const diffMinutes = Math.floor((Date.now() - ts) / 60_000);
+function timeAgo(iso: string): string {
+  const diffMinutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
   if (diffMinutes < 1) return "just now";
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   const diffHours = Math.floor(diffMinutes / 60);
@@ -30,8 +35,19 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diffHours / 24)}d ago`;
 }
 
-function claimedTotal(distribution: StoredDistribution): number {
+function claimedTotal(distribution: ApiDistribution): number {
   return distribution.recipients.filter((recipient) => recipient.claimed).length;
+}
+
+function distributionTotalDisplay(distribution: ApiDistribution): string {
+  const totalRaw = distribution.recipients.reduce((sum, r) => sum + toBaseUnits(r.amountDisplay), 0n);
+  return `${formatAmount(totalRaw)} ${distribution.tokenSymbol}`;
+}
+
+function draftTitle(draft: DraftDto): string {
+  const formState = draft.formState as { config?: { title?: string } } | null;
+  const templateTitle = TEMPLATES.find((t) => t.id === draft.template)?.copy.title;
+  return formState?.config?.title || templateTitle || "Untitled distribution";
 }
 
 function StatCard({
@@ -60,21 +76,28 @@ function StatCard({
 export default function DashboardPage() {
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
-  const [distributions, setDistributions] = useState<StoredDistribution[]>([]);
+  const [distributions, setDistributions] = useState<ApiDistribution[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [drafts, setDrafts] = useState<DraftDto[]>([]);
 
   useEffect(() => {
-    if (address) setDistributions(loadDistributions(address));
+    if (!address) return;
+    setIsLoading(true);
+    listDistributions(address)
+      .then(setDistributions)
+      .finally(() => setIsLoading(false));
+    listDrafts(address).then(setDrafts);
   }, [address]);
 
-  const totalRecipients = distributions.reduce((sum, distribution) => sum + distribution.recipientCount, 0);
+  const totalRecipients = distributions.reduce((sum, distribution) => sum + distribution.recipients.length, 0);
   const airdrops = distributions.filter((distribution) => distribution.mode === "airdrop");
   const pendingClaims = airdrops.reduce(
-    (sum, distribution) => sum + Math.max(distribution.recipientCount - claimedTotal(distribution), 0),
+    (sum, distribution) => sum + Math.max(distribution.recipients.length - claimedTotal(distribution), 0),
     0,
   );
   const completedDrops = distributions.filter((distribution) => {
     if (distribution.mode === "disperse") return true;
-    return Math.max(distribution.recipientCount - claimedTotal(distribution), 0) === 0;
+    return Math.max(distribution.recipients.length - claimedTotal(distribution), 0) === 0;
   }).length;
 
   return (
@@ -85,14 +108,49 @@ export default function DashboardPage() {
           <p className="mt-1 text-sm text-ink-500">Monitor encrypted drops, claim progress, and operational history.</p>
         </div>
         {isConnected && isSepolia && distributions.length > 0 && (
-          <Link href="/distribute">
-            <Button>
-              New drop
-              <ArrowUpRight className="size-4" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/distribute?duplicate=${distributions[0]!.id}`}>
+              <Button variant="secondary">
+                <Copy className="size-4" />
+                Duplicate last
+              </Button>
+            </Link>
+            <Link href="/distribute">
+              <Button>
+                New drop
+                <ArrowUpRight className="size-4" />
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
+
+      {isConnected && isSepolia && drafts.length > 0 && (
+        <div className="mb-6 rounded-xl border border-accent-600/25 bg-accent-100/30 p-5">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink-900">
+            <FileEdit className="size-4 text-accent-600" />
+            Continue draft
+          </h2>
+          <div className="flex flex-col gap-2.5">
+            {drafts.map((draft) => (
+              <Link
+                key={draft.id}
+                href="/distribute"
+                className="group flex items-center gap-3.5 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-3.5 transition-all hover:-translate-y-0.5 hover:border-accent-600/40"
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink-900/[0.05] text-ink-600 transition-colors group-hover:bg-accent-600/10 group-hover:text-accent-600">
+                  {draft.mode === "disperse" ? <Send className="size-4" /> : <Gift className="size-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink-900">{draftTitle(draft)}</p>
+                  <p className="mt-0.5 text-[11px] text-ink-500">Last edited {timeAgo(draft.updatedAt)}</p>
+                </div>
+                <ArrowUpRight className="size-4 shrink-0 text-ink-500 transition-colors group-hover:text-accent-600" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!isConnected ? (
         <Card>
@@ -110,6 +168,8 @@ export default function DashboardPage() {
             <WalletButton />
           </CardContent>
         </Card>
+      ) : isLoading ? (
+        <Skeleton className="h-64 w-full" />
       ) : distributions.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
@@ -138,9 +198,10 @@ export default function DashboardPage() {
               {distributions.slice(0, 5).map((distribution) => {
                 const Icon = distribution.mode === "disperse" ? Send : Gift;
                 const claimed = claimedTotal(distribution);
-                const pending = Math.max(distribution.recipientCount - claimed, 0);
+                const recipientCount = distribution.recipients.length;
+                const pending = Math.max(recipientCount - claimed, 0);
                 const isComplete = distribution.mode === "disperse" || pending === 0;
-                const progress = distribution.recipientCount > 0 ? (claimed / distribution.recipientCount) * 100 : 0;
+                const progress = recipientCount > 0 ? (claimed / recipientCount) * 100 : 0;
                 return (
                   <Link
                     key={distribution.id}
@@ -152,8 +213,10 @@ export default function DashboardPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-ink-900">{distribution.title}</p>
-                      <p className="mt-0.5 text-[11px] text-ink-500">
-                        {distribution.recipientCount} recipient{distribution.recipientCount !== 1 ? "s" : ""}
+                      <p className="mt-0.5 truncate text-[11px] text-ink-500">
+                        <span className="font-mono text-ink-700">{distributionTotalDisplay(distribution)}</span>
+                        {" · "}
+                        {recipientCount} recipient{recipientCount !== 1 ? "s" : ""}
                         {" · "}
                         <span className="capitalize">{distribution.mode}</span>
                         {" · "}

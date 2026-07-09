@@ -77,12 +77,25 @@ Open [http://localhost:3000](http://localhost:3000), connect your wallet on Sepo
 
 ### Environment Variables
 
-No environment variables are required to run locally — the app falls back to a public Sepolia RPC. Optionally override:
+```bash
+# .env
+DATABASE_URL="postgresql://user:password@host:5432/dbname"
+```
+
+`DATABASE_URL` is required, VeilDrop uses Postgres (via Prisma) for distribution history, recipient claim state, drafts, and the address book. Any Postgres works, including a local instance or a free tier on [Neon](https://neon.tech) or [Supabase](https://supabase.com).
 
 ```bash
-# .env.local
+# .env.local, optional
 NEXT_PUBLIC_SEPOLIA_RPC_URL=https://your-rpc-endpoint
 ```
+
+### Database setup
+
+```bash
+npx prisma migrate dev
+```
+
+Applies the schema in `prisma/schema.prisma` and generates the Prisma client.
 
 ---
 

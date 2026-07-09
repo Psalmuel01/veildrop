@@ -11,18 +11,19 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StepTemplate } from "@/components/distribute/StepTemplate";
-import { StepConfigure, type DistributionConfig } from "@/components/distribute/StepConfigure";
+import { StepConfigure, defaultDateTimeLocal, type DistributionConfig } from "@/components/distribute/StepConfigure";
 import { StepRecipients } from "@/components/distribute/StepRecipients";
 import { StepReviewDisperse } from "@/components/distribute/StepReviewDisperse";
 import { StepReviewAirdrop, type AirdropSuccessResult } from "@/components/distribute/StepReviewAirdrop";
 import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
-import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
-import { saveDistribution } from "@/lib/distributions";
-import { clearDistributionDraft, loadDistributionDraft, saveDistributionDraft } from "@/lib/distribution-drafts";
-import { getTokenConfig } from "@/lib/tokens";
+import { addManualRecipient, summarizeRecipients, type RecipientRow } from "@/lib/recipients";
+import { createDistribution, getDistribution, listDistributions, upsertAddressBookEntry } from "@/lib/api";
+import { loadLatestDraft, persistDraft, removeDraft } from "@/lib/distribution-drafts";
+import { getTokenConfig, getTokenConfigByAddress } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
+import { useToast } from "@/components/ui/Toast";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
 
 interface WizardResult {
@@ -33,6 +34,10 @@ interface WizardResult {
 }
 
 const STEPS = ["Use case", "Configure", "Recipients", "Review", "Done"] as const;
+
+function templateClaimEnd(template: (typeof TEMPLATES)[number]): string {
+  return template.defaultClaimWindowDays ? defaultDateTimeLocal(60 * 24 * template.defaultClaimWindowDays) : "";
+}
 
 function Stepper({ step }: { step: number }) {
   return (
@@ -63,6 +68,7 @@ function DistributeWizard() {
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
   const isZamaReady = useIsZamaReady();
+  const { push: toast } = useToast();
   const { isLoading: isLoadingMeta } = useFaucetMetadata();
 
   const initialTemplate = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
@@ -73,105 +79,230 @@ function DistributeWizard() {
   const [selectedTokenId, setSelectedTokenId] = useState<string>("veil");
   const [config, setConfig] = useState<DistributionConfig>({
     title: initialTemplate.copy.title,
-    description: "",
+    description: initialTemplate.copy.description,
     claimStart: "",
-    claimEnd: "",
+    claimEnd: templateClaimEnd(initialTemplate),
   });
+  // Tracks the last value a template auto-filled for each field, so switching
+  // templates keeps updating them right up until the user makes their own
+  // edit, instead of only ever applying on the very first pick.
+  const [autoTitle, setAutoTitle] = useState(initialTemplate.copy.title);
+  const [autoDescription, setAutoDescription] = useState(initialTemplate.copy.description);
+  const [autoClaimEnd, setAutoClaimEnd] = useState(templateClaimEnd(initialTemplate));
   const [recipients, setRecipients] = useState<RecipientRow[]>([]);
   const [result, setResult] = useState<WizardResult | null>(null);
-  const [draftLoadedAt, setDraftLoadedAt] = useState<number | null>(null);
-  const [draftStatus, setDraftStatus] = useState<"idle" | "saved">("idle");
+  const [draftId, setDraftId] = useState<string | undefined>(undefined);
+  const [draftLoadedAt, setDraftLoadedAt] = useState<string | null>(null);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [lastRunByTemplate, setLastRunByTemplate] = useState<Record<string, string>>({});
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
   const selectedToken = getTokenConfig(selectedTokenId);
   const summary = summarizeRecipients(recipients);
   const validRecipients = recipients.filter((r) => r.isValidAddress && r.isValidAmount && !r.isDuplicate);
 
+  const duplicateId = searchParams.get("duplicate");
+
   useEffect(() => {
     if (!address) return;
-    const draft = loadDistributionDraft(address);
-    if (!draft) return;
-    setStep(Math.min(draft.step, 3));
-    setTemplateId(TEMPLATES.some((t) => t.id === draft.templateId) ? draft.templateId : TEMPLATES[0]!.id);
-    setMode(draft.mode);
-    setSelectedTokenId(draft.selectedTokenId || "veil");
-    setConfig(draft.config);
-    setRecipients(draft.recipients);
-    setDraftLoadedAt(draft.updatedAt);
+    listDistributions(address).then((all) => {
+      const map: Record<string, string> = {};
+      // API returns newest first, so the first hit per template is the most recent.
+      for (const d of all) if (!map[d.template]) map[d.template] = d.createdAt;
+      setLastRunByTemplate(map);
+    });
   }, [address]);
 
   useEffect(() => {
-    if (!address || result || step >= 4) return;
-    saveDistributionDraft(address, {
-      step,
-      templateId,
-      mode,
-      selectedTokenId,
-      config,
-      recipients,
-      updatedAt: Date.now(),
+    if (!address || duplicateId) return;
+    let cancelled = false;
+    loadLatestDraft(address).then((draft) => {
+      if (cancelled || !draft) return;
+      setDraftId(draft.id);
+      setStep(Math.min(draft.step, 3));
+      setTemplateId(TEMPLATES.some((t) => t.id === draft.templateId) ? draft.templateId : TEMPLATES[0]!.id);
+      setMode(draft.mode);
+      setSelectedTokenId(draft.selectedTokenId || "veil");
+      setConfig(draft.config);
+      const restoredTemplate = TEMPLATES.find((t) => t.id === draft.templateId) ?? TEMPLATES[0]!;
+      setAutoTitle(restoredTemplate.copy.title);
+      setAutoDescription(restoredTemplate.copy.description);
+      setAutoClaimEnd(templateClaimEnd(restoredTemplate));
+      setRecipients(draft.recipients);
+      setDraftLoadedAt(draft.updatedAt);
     });
-    setDraftStatus("saved");
-    const timeout = window.setTimeout(() => setDraftStatus("idle"), 1800);
+    return () => {
+      cancelled = true;
+    };
+  }, [address, duplicateId]);
+
+  // "Duplicate last distribution" from the dashboard lands here with
+  // ?duplicate={id}. Seeds a fresh wizard from the source distribution
+  // instead of restoring a draft, since it's a new run, not a resume.
+  useEffect(() => {
+    if (!duplicateId) return;
+    let cancelled = false;
+    getDistribution(duplicateId).then((source) => {
+      if (cancelled || !source) return;
+      const sourceTemplate = TEMPLATES.some((t) => t.id === source.template)
+        ? source.template
+        : TEMPLATES[0]!.id;
+      setTemplateId(sourceTemplate);
+      setMode(source.mode);
+      setSelectedTokenId(getTokenConfigByAddress(source.token as `0x${string}`)?.id ?? "veil");
+      setConfig({ title: source.title, description: source.description ?? "", claimStart: "", claimEnd: "" });
+      setAutoTitle(source.title);
+      setAutoDescription(source.description ?? "");
+      setAutoClaimEnd("");
+      setRecipients(
+        source.recipients.reduce(
+          (rows, r) => addManualRecipient(rows, r.address, r.amountDisplay),
+          [] as RecipientRow[],
+        ),
+      );
+      setStep(1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [duplicateId]);
+
+  // Debounced two seconds after the last change, so navigating between steps
+  // or typing doesn't fire an API call on every keystroke.
+  useEffect(() => {
+    if (!address || result || step >= 4) return;
+    setDraftStatus("saving");
+    const timeout = window.setTimeout(() => {
+      persistDraft(address, draftId, { step, templateId, mode, selectedTokenId, config, recipients }).then(
+        (saved) => {
+          setDraftId(saved.id);
+          setDraftStatus("saved");
+        },
+      );
+    }, 2000);
     return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, step, templateId, mode, selectedTokenId, config, recipients, result]);
 
   function discardDraft() {
-    if (address) clearDistributionDraft(address);
+    if (draftId) removeDraft(draftId);
     const initial = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
     setStep(0);
     setTemplateId(initial.id);
     setMode(initial.defaultMode);
     setSelectedTokenId("veil");
-    setConfig({ title: initial.copy.title, description: "", claimStart: "", claimEnd: "" });
+    setConfig({
+      title: initial.copy.title,
+      description: initial.copy.description,
+      claimStart: "",
+      claimEnd: templateClaimEnd(initial),
+    });
+    setAutoTitle(initial.copy.title);
+    setAutoDescription(initial.copy.description);
+    setAutoClaimEnd(templateClaimEnd(initial));
     setRecipients([]);
     setResult(null);
+    setDraftId(undefined);
     setDraftLoadedAt(null);
   }
 
-  function handleDisperseSuccess(disperseResult: DisperseResult) {
+  // Best effort: every recipient gets remembered for the address book,
+  // regardless of distribution mode. A failure here should never block the
+  // success screen, the on-chain action already happened.
+  function rememberRecipients() {
+    if (!address) return;
+    for (const r of validRecipients) {
+      upsertAddressBookEntry({
+        ownerAddress: address,
+        address: r.address,
+        lastAmount: r.amountDisplay,
+        incrementUse: true,
+      }).catch(() => null);
+    }
+  }
+
+  async function handleDisperseSuccess(disperseResult: DisperseResult) {
     const txHash = disperseResult.hash;
     if (address) {
-      saveDistribution(address, {
-        id: crypto.randomUUID(),
-        mode: "disperse",
-        templateId,
-        title: config.title || template.copy.title,
-        token: selectedToken.address,
-        tokenSymbol: selectedToken.symbol,
-        recipientCount: validRecipients.length,
-        createdAt: Date.now(),
-        txHash,
-        recipients: validRecipients.map((r) => ({ address: r.address, claimed: true })),
-      });
-      clearDistributionDraft(address);
+      try {
+        await createDistribution({
+          adminAddress: address,
+          mode: "disperse",
+          template: templateId,
+          title: config.title || template.copy.title,
+          description: config.description || undefined,
+          token: selectedToken.address,
+          tokenSymbol: selectedToken.symbol,
+          txHash,
+          recipients: validRecipients.map((r) => ({
+            address: r.address,
+            amountDisplay: r.amountDisplay,
+            claimed: true,
+          })),
+        });
+      } catch (err) {
+        toast({
+          kind: "error",
+          title: "Saved on-chain, but history sync failed",
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      rememberRecipients();
+      if (draftId) removeDraft(draftId);
     }
     setResult({ mode: "disperse", txHash, recipientCount: validRecipients.length });
     setStep(4);
   }
 
-  function handleAirdropSuccess(airdropResult: AirdropSuccessResult) {
+  async function handleAirdropSuccess(airdropResult: AirdropSuccessResult) {
+    // Default to the original payload-encoded links, always valid on their
+    // own. Upgraded to shorter /claim/[id] links below once the backend
+    // confirms the save and hands back real recipient ids.
+    let claimLinks = airdropResult.claimLinks;
+
     if (address) {
-      saveDistribution(address, {
-        id: crypto.randomUUID(),
-        mode: "airdrop",
-        templateId,
-        title: config.title || template.copy.title,
-        token: selectedToken.address,
-        tokenSymbol: selectedToken.symbol,
-        recipientCount: validRecipients.length,
-        createdAt: Date.now(),
-        txHash: airdropResult.txHash,
-        airdropAddress: airdropResult.airdropAddress,
-        recipients: airdropResult.claimLinks.map((c) => ({ address: c.address, claimed: false, claimUrl: c.url })),
-      });
-      clearDistributionDraft(address);
+      try {
+        const saved = await createDistribution({
+          adminAddress: address,
+          mode: "airdrop",
+          template: templateId,
+          title: config.title || template.copy.title,
+          description: config.description || undefined,
+          token: selectedToken.address,
+          tokenSymbol: selectedToken.symbol,
+          txHash: airdropResult.txHash,
+          contractAddress: airdropResult.airdropAddress,
+          claimWindowStart: config.claimStart ? new Date(config.claimStart).toISOString() : undefined,
+          claimWindowEnd: config.claimEnd ? new Date(config.claimEnd).toISOString() : undefined,
+          recipients: airdropResult.claimLinks.map((c) => ({
+            address: c.address,
+            amountDisplay: c.amountDisplay,
+            claimUrl: c.url,
+            claimed: false,
+          })),
+        });
+        const origin = window.location.origin;
+        claimLinks = airdropResult.claimLinks.map((c) => {
+          const savedRecipient = saved.recipients.find((r) => r.address.toLowerCase() === c.address.toLowerCase());
+          return savedRecipient
+            ? { ...c, url: `${origin}/claim/${savedRecipient.id}`, id: savedRecipient.id }
+            : c;
+        });
+      } catch (err) {
+        toast({
+          kind: "error",
+          title: "Saved on-chain, but history sync failed",
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      rememberRecipients();
+      if (draftId) removeDraft(draftId);
     }
     setResult({
       mode: "airdrop",
       txHash: airdropResult.txHash,
       recipientCount: validRecipients.length,
-      claimLinks: airdropResult.claimLinks,
+      claimLinks,
     });
     setStep(4);
   }
@@ -211,6 +342,8 @@ function DistributeWizard() {
             <span>
               Draft restored from {new Date(draftLoadedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
             </span>
+          ) : draftStatus === "saving" ? (
+            <span>Saving draft…</span>
           ) : draftStatus === "saved" ? (
             <span>Draft saved</span>
           ) : (
@@ -231,10 +364,23 @@ function DistributeWizard() {
             <StepTemplate
               selectedId={templateId}
               mode={mode}
+              lastRunByTemplate={lastRunByTemplate}
               onSelect={(id) => {
                 setTemplateId(id);
                 const t = TEMPLATES.find((tt) => tt.id === id)!;
-                setConfig((c) => ({ ...c, title: c.title || t.copy.title }));
+                const claimEnd = templateClaimEnd(t);
+                setConfig((c) => ({
+                  ...c,
+                  // Keep auto-filling each field as the user browses templates,
+                  // but stop the moment they've typed something of their own.
+                  title: c.title !== "" && c.title !== autoTitle ? c.title : t.copy.title,
+                  description:
+                    c.description !== "" && c.description !== autoDescription ? c.description : t.copy.description,
+                  claimEnd: c.claimEnd !== "" && c.claimEnd !== autoClaimEnd ? c.claimEnd : claimEnd,
+                }));
+                setAutoTitle(t.copy.title);
+                setAutoDescription(t.copy.description);
+                setAutoClaimEnd(claimEnd);
               }}
               onModeChange={setMode}
             />
@@ -254,6 +400,8 @@ function DistributeWizard() {
               onChange={setRecipients}
               tokenSymbol={selectedToken.symbol}
               recipientLabel={template.copy.recipientLabel}
+              ownerAddress={address}
+              addressBookFirst={template.addressBookFirst}
             />
           )}
           {step === 3 &&

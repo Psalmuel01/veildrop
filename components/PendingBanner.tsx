@@ -20,7 +20,12 @@ export function PendingBanner() {
       .then((result) => {
         if (!cancelled) setPending(result);
       })
-      .catch(() => null);
+      .catch((err) => {
+        // A failed fetch should stay invisible to the recipient (nothing
+        // conclusive to show), but it must not look identical to "genuinely
+        // zero pending distributions" in the logs.
+        console.error("Failed to load pending distributions", err);
+      });
     return () => {
       cancelled = true;
     };

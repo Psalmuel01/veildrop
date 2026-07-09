@@ -5,9 +5,10 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { ArrowLeft, ExternalLink, Wallet, AlertTriangle, CheckCircle2, Clock3, FileText, Copy } from "lucide-react";
+import { ArrowLeft, ExternalLink, Wallet, AlertTriangle, CheckCircle2, Clock3, FileText, Copy, Inbox } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
 import { RecipientStatusRow } from "@/components/dashboard/RecipientStatusRow";
 import { useToast } from "@/components/ui/Toast";
@@ -82,7 +83,12 @@ export default function DistributionDetailPage() {
             <WalletButton />
           </CardContent>
         </Card>
-      ) : distribution === undefined ? null : distribution === null ? (
+      ) : distribution === undefined ? (
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      ) : distribution === null ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
             <p className="text-sm text-ink-700">Distribution not found for this wallet.</p>
@@ -174,6 +180,12 @@ export default function DistributionDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-hidden rounded-b-2xl border-t border-ink-900/[0.06]">
+                {distribution.recipients.length === 0 && (
+                  <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+                    <Inbox className="size-7 text-ink-500" />
+                    <p className="text-sm text-ink-500">No recipients on this distribution.</p>
+                  </div>
+                )}
                 {distribution.recipients.map((r) =>
                   distribution.mode === "airdrop" ? (
                     <RecipientStatusRow

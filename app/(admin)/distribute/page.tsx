@@ -18,11 +18,12 @@ import { StepReviewAirdrop, type AirdropSuccessResult } from "@/components/distr
 import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { summarizeRecipients, type RecipientRow } from "@/lib/recipients";
-import { saveDistribution } from "@/lib/distributions";
+import { createDistribution, upsertAddressBookEntry } from "@/lib/api";
 import { clearDistributionDraft, loadDistributionDraft, saveDistributionDraft } from "@/lib/distribution-drafts";
 import { getTokenConfig } from "@/lib/tokens";
 import { cn } from "@/lib/cn";
 import { useIsZamaReady } from "@/app/providers";
+import { useToast } from "@/components/ui/Toast";
 import type { DisperseResult } from "@tokenops/sdk/fhe-disperse";
 
 interface WizardResult {
@@ -63,6 +64,7 @@ function DistributeWizard() {
   const { address, isConnected, chainId } = useAccount();
   const isSepolia = chainId === sepolia.id;
   const isZamaReady = useIsZamaReady();
+  const { push: toast } = useToast();
   const { isLoading: isLoadingMeta } = useFaucetMetadata();
 
   const initialTemplate = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
@@ -136,42 +138,84 @@ function DistributeWizard() {
     setDraftLoadedAt(null);
   }
 
-  function handleDisperseSuccess(disperseResult: DisperseResult) {
+  // Best effort: every recipient gets remembered for the address book,
+  // regardless of distribution mode. A failure here should never block the
+  // success screen, the on-chain action already happened.
+  function rememberRecipients() {
+    if (!address) return;
+    for (const r of validRecipients) {
+      upsertAddressBookEntry({
+        ownerAddress: address,
+        address: r.address,
+        lastAmount: r.amountDisplay,
+        incrementUse: true,
+      }).catch(() => null);
+    }
+  }
+
+  async function handleDisperseSuccess(disperseResult: DisperseResult) {
     const txHash = disperseResult.hash;
     if (address) {
-      saveDistribution(address, {
-        id: crypto.randomUUID(),
-        mode: "disperse",
-        templateId,
-        title: config.title || template.copy.title,
-        token: selectedToken.address,
-        tokenSymbol: selectedToken.symbol,
-        recipientCount: validRecipients.length,
-        createdAt: Date.now(),
-        txHash,
-        recipients: validRecipients.map((r) => ({ address: r.address, claimed: true })),
-      });
+      try {
+        await createDistribution({
+          adminAddress: address,
+          mode: "disperse",
+          template: templateId,
+          title: config.title || template.copy.title,
+          description: config.description || undefined,
+          token: selectedToken.address,
+          tokenSymbol: selectedToken.symbol,
+          txHash,
+          recipients: validRecipients.map((r) => ({
+            address: r.address,
+            amountDisplay: r.amountDisplay,
+            claimed: true,
+          })),
+        });
+      } catch (err) {
+        toast({
+          kind: "error",
+          title: "Saved on-chain, but history sync failed",
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      rememberRecipients();
       clearDistributionDraft(address);
     }
     setResult({ mode: "disperse", txHash, recipientCount: validRecipients.length });
     setStep(4);
   }
 
-  function handleAirdropSuccess(airdropResult: AirdropSuccessResult) {
+  async function handleAirdropSuccess(airdropResult: AirdropSuccessResult) {
     if (address) {
-      saveDistribution(address, {
-        id: crypto.randomUUID(),
-        mode: "airdrop",
-        templateId,
-        title: config.title || template.copy.title,
-        token: selectedToken.address,
-        tokenSymbol: selectedToken.symbol,
-        recipientCount: validRecipients.length,
-        createdAt: Date.now(),
-        txHash: airdropResult.txHash,
-        airdropAddress: airdropResult.airdropAddress,
-        recipients: airdropResult.claimLinks.map((c) => ({ address: c.address, claimed: false, claimUrl: c.url })),
-      });
+      try {
+        await createDistribution({
+          adminAddress: address,
+          mode: "airdrop",
+          template: templateId,
+          title: config.title || template.copy.title,
+          description: config.description || undefined,
+          token: selectedToken.address,
+          tokenSymbol: selectedToken.symbol,
+          txHash: airdropResult.txHash,
+          contractAddress: airdropResult.airdropAddress,
+          claimWindowStart: config.claimStart ? new Date(config.claimStart).toISOString() : undefined,
+          claimWindowEnd: config.claimEnd ? new Date(config.claimEnd).toISOString() : undefined,
+          recipients: airdropResult.claimLinks.map((c) => ({
+            address: c.address,
+            amountDisplay: c.amountDisplay,
+            claimUrl: c.url,
+            claimed: false,
+          })),
+        });
+      } catch (err) {
+        toast({
+          kind: "error",
+          title: "Saved on-chain, but history sync failed",
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      rememberRecipients();
       clearDistributionDraft(address);
     }
     setResult({

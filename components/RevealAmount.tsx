@@ -24,7 +24,7 @@ export function RevealAmount({
   const [justRevealed, setJustRevealed] = useState(false);
 
   return (
-    <div className={cn("flex flex-col items-center gap-6 text-center", className)}>
+    <div className={cn("flex flex-col items-center gap-2.5 text-center", className)}>
       <div
         className={cn(
           "relative flex min-h-24 items-center justify-center rounded-2xl px-8 py-6",
@@ -65,7 +65,7 @@ export function RevealAmount({
       </div>
 
       {status !== "revealed" && (
-        <Button size="lg" onClick={onDecrypt} isLoading={status === "decrypting"}>
+        <Button size="md" onClick={onDecrypt} isLoading={status === "decrypting"}>
           {status === "decrypting" ? "Decrypting" : "Decrypt allocation"}
         </Button>
       )}

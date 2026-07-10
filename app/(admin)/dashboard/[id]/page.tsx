@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
 import { RecipientStatusRow } from "@/components/dashboard/RecipientStatusRow";
+import { RecipientVestingRow } from "@/components/dashboard/RecipientVestingRow";
 import { useToast } from "@/components/ui/Toast";
 import { getDistribution, patchRecipient, type ApiDistribution } from "@/lib/api";
 
@@ -122,6 +123,15 @@ export default function DistributionDetailPage() {
                     </p>
                   </div>
                 )}
+                {distribution.mode === "vesting" && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-ink-500">Schedules</p>
+                    <p className="flex items-center gap-1 text-sm font-semibold text-ink-900">
+                      <Clock3 className="size-3.5 text-accent-600" />
+                      {distribution.recipients.length} active
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-xs uppercase tracking-wide text-ink-500">Created</p>
                   <p className="text-sm font-semibold text-ink-900">
@@ -171,10 +181,20 @@ export default function DistributionDetailPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>{distribution.mode === "airdrop" ? "Recipient Claim Ledger" : "Recipient Delivery Ledger"}</CardTitle>
+                <CardTitle>
+                  {distribution.mode === "airdrop"
+                    ? "Recipient Claim Ledger"
+                    : distribution.mode === "vesting"
+                      ? "Vesting Schedule Ledger"
+                      : "Recipient Delivery Ledger"}
+                </CardTitle>
                 <span className="flex items-center gap-1.5 text-xs text-ink-500">
                   <Clock3 className="size-3.5" />
-                  {distribution.mode === "airdrop" ? `${claimedCount} confirmed` : "Delivered"}
+                  {distribution.mode === "airdrop"
+                    ? `${claimedCount} confirmed`
+                    : distribution.mode === "vesting"
+                      ? `${distribution.recipients.length} schedules`
+                      : "Delivered"}
                 </span>
               </div>
             </CardHeader>
@@ -195,6 +215,14 @@ export default function DistributionDetailPage() {
                       claimUrl={r.claimUrl ?? undefined}
                       notifiedAt={r.notifiedAt}
                       onStatus={(claimed) => handleStatus(r.id, r.address, claimed)}
+                    />
+                  ) : distribution.mode === "vesting" ? (
+                    <RecipientVestingRow
+                      key={r.id}
+                      address={r.address}
+                      vestingId={r.vestingId}
+                      managerAddress={distribution.contractAddress as `0x${string}`}
+                      totalClaimedAmount={r.totalClaimedAmount}
                     />
                   ) : (
                     <div

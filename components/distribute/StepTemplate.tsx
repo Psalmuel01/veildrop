@@ -114,6 +114,18 @@ export function StepTemplate({
                   <span className="text-xs text-ink-500">Recipients claim on their own schedule via a link.</span>
                 </span>
               </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={mode === "vesting"}
+                  onChange={() => onModeChange("vesting")}
+                  className="size-4 accent-accent-600 cursor-pointer"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="font-medium text-ink-900">Vesting</span>
+                  <span className="text-xs text-ink-500">Unlocks gradually after a cliff, on a schedule you set.</span>
+                </span>
+              </label>
             </div>
           )}
         </div>

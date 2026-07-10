@@ -3,15 +3,15 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, AlertTriangle, ShieldQuestion } from "lucide-react";
-import { useConfidentialBalance, useMintConfidential } from "@tokenops/sdk/testnet-faucet/react";
+import { useMintConfidential } from "@tokenops/sdk/testnet-faucet/react";
+import { useConfidentialBalanceHandle } from "@/lib/hooks/useConfidentialBalanceHandle";
 import { useDecryptedHandle } from "@/lib/hooks/useDecryptedHandle";
 import { useMintVeilToken } from "@/lib/hooks/useMintVeilToken";
 import { formatAmount } from "@/lib/amount";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { getTokenConfig, getTokenConfigByAddress, VEIL_TOKEN } from "@/lib/tokens";
+import { getTokenConfig, getTokenConfigByAddress } from "@/lib/tokens";
 import type { Address } from "viem";
-import { useAccount, useReadContract } from "wagmi";
 
 export function BalanceCheck({
   tokenAddress,
@@ -26,31 +26,9 @@ export function BalanceCheck({
   onResolved?: (sufficient: boolean) => void;
   tokenId?: string;
 }) {
-  const { address } = useAccount();
   const queryClient = useQueryClient();
   const { push: toast } = useToast();
-  const { data: ctttHandle } = useConfidentialBalance();
-
-  const { data: veilHandle } = useReadContract({
-    address: VEIL_TOKEN.address,
-    abi: [
-      {
-        type: "function",
-        name: "confidentialBalanceOf",
-        inputs: [{ name: "account", type: "address" }],
-        outputs: [{ name: "", type: "bytes32" }],
-        stateMutability: "view",
-      },
-    ] as const,
-    functionName: "confidentialBalanceOf",
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address && tokenAddress.toLowerCase() === VEIL_TOKEN.address.toLowerCase(),
-    },
-  });
-
-  const isVctt = tokenAddress.toLowerCase() === VEIL_TOKEN.address.toLowerCase();
-  const handle = isVctt ? veilHandle : ctttHandle;
+  const { handle } = useConfidentialBalanceHandle(tokenAddress);
 
   const { value, isRevealing, isRevealed, reveal } = useDecryptedHandle(handle, tokenAddress);
   const mintCTTT = useMintConfidential();

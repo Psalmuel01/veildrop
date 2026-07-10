@@ -22,24 +22,25 @@ export function StepSuccess({
   recipientCount,
   claimLinks,
 }: {
-  mode: "disperse" | "airdrop";
+  mode: "disperse" | "airdrop" | "vesting";
   txHash: string;
   recipientCount: number;
   claimLinks?: ClaimLinkEntry[];
 }) {
   const { push: toast } = useToast();
   const [copiedLinks, setCopiedLinks] = useState<Set<string>>(() => new Set());
-  const [hasExportedLinks, setHasExportedLinks] = useState(mode !== "airdrop");
+  const hasShareableLinks = mode === "airdrop" || mode === "vesting";
+  const [hasExportedLinks, setHasExportedLinks] = useState(!hasShareableLinks);
 
   useEffect(() => {
-    if (mode !== "airdrop" || hasExportedLinks) return;
+    if (!hasShareableLinks || hasExportedLinks) return;
     function warnBeforeLeave(event: BeforeUnloadEvent) {
       event.preventDefault();
       event.returnValue = "";
     }
     window.addEventListener("beforeunload", warnBeforeLeave);
     return () => window.removeEventListener("beforeunload", warnBeforeLeave);
-  }, [hasExportedLinks, mode]);
+  }, [hasExportedLinks, hasShareableLinks]);
 
   useEffect(() => {
     if (claimLinks && copiedLinks.size === claimLinks.length) setHasExportedLinks(true);
@@ -81,12 +82,14 @@ export function StepSuccess({
       </div>
       <div>
         <h2 className="font-display text-2xl font-bold text-ink-900">
-          {mode === "disperse" ? "Tokens dispersed" : "Airdrop is live"}
+          {mode === "disperse" ? "Tokens dispersed" : mode === "vesting" ? "Vesting is live" : "Airdrop is live"}
         </h2>
         <p className="mt-1 text-sm text-ink-500">
           {mode === "disperse"
             ? `Pushed to ${recipientCount} recipients. Amounts stay encrypted on-chain.`
-            : `${recipientCount} claim links generated. Share one with each recipient.`}
+            : mode === "vesting"
+              ? `${recipientCount} vesting schedules created. Recipients can track and claim unlocks over time.`
+              : `${recipientCount} claim links generated. Share one with each recipient.`}
         </p>
       </div>
 
@@ -100,15 +103,17 @@ export function StepSuccess({
         <ExternalLink className="size-3.5" />
       </a>
 
-      {mode === "airdrop" && claimLinks && (
+      {hasShareableLinks && claimLinks && (
         <div className="w-full text-left">
           {!hasExportedLinks && (
             <div className="mb-3 rounded-xl border border-accent-600/25 bg-accent-100/40 px-4 py-3 text-sm text-ink-700">
-              Save these links now. Each recipient needs their own link to claim.
+              {mode === "vesting"
+                ? "Save these links now. Each recipient needs their own link to view and claim their schedule."
+                : "Save these links now. Each recipient needs their own link to claim."}
             </div>
           )}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-medium text-ink-900">Claim links</h3>
+            <h3 className="text-sm font-medium text-ink-900">{mode === "vesting" ? "Schedule links" : "Claim links"}</h3>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" onClick={copyAllLinks}>
                 <Files className="size-3.5" />

@@ -10,13 +10,15 @@ export interface ApiRecipient {
   revealedAt: string | null;
   notifiedAt: string | null;
   txHash: string | null;
+  vestingId: string | null;
+  totalClaimedAmount: string | null;
   createdAt: string;
 }
 
 export interface ApiDistribution {
   id: string;
   adminAddress: string;
-  mode: "disperse" | "airdrop";
+  mode: "disperse" | "airdrop" | "vesting";
   template: string;
   title: string;
   description: string | null;
@@ -26,6 +28,8 @@ export interface ApiDistribution {
   contractAddress: string | null;
   claimWindowStart: string | null;
   claimWindowEnd: string | null;
+  cliffSeconds: number | null;
+  vestingSeconds: number | null;
   status: string;
   createdAt: string;
   recipients: ApiRecipient[];
@@ -35,11 +39,12 @@ export interface PendingRecipient {
   id: string;
   distributionId: string;
   title: string;
-  mode: "disperse" | "airdrop";
+  mode: "disperse" | "airdrop" | "vesting";
   adminAddress: string;
   amountDisplay: string;
   claimUrl: string | null;
   claimWindowEnd: string | null;
+  totalClaimedAmount: string | null;
   createdAt: string;
 }
 
@@ -85,7 +90,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface CreateDistributionInput {
   adminAddress: string;
-  mode: "disperse" | "airdrop";
+  mode: "disperse" | "airdrop" | "vesting";
   template: string;
   title: string;
   description?: string;
@@ -95,7 +100,9 @@ export interface CreateDistributionInput {
   contractAddress?: string;
   claimWindowStart?: string;
   claimWindowEnd?: string;
-  recipients: { address: string; amountDisplay: string; claimUrl?: string; claimed: boolean }[];
+  cliffSeconds?: number;
+  vestingSeconds?: number;
+  recipients: { address: string; amountDisplay: string; claimUrl?: string; vestingId?: string; claimed: boolean }[];
 }
 
 export function createDistribution(input: CreateDistributionInput) {
@@ -171,4 +178,28 @@ export function saveDraft(input: { id?: string; ownerAddress: string; mode: stri
 
 export function deleteDraft(id: string) {
   return api<{ ok: true }>(`/api/drafts/${id}`, { method: "DELETE" });
+}
+
+export interface VestingClaimDto {
+  id: string;
+  recipientId: string;
+  amountDisplay: string;
+  txHash: string;
+  claimedAt: string;
+}
+
+export interface VestingScheduleDto extends ApiRecipient {
+  distribution: ApiDistribution;
+  vestingClaims: VestingClaimDto[];
+}
+
+export async function getVestingSchedule(recipientId: string): Promise<VestingScheduleDto | null> {
+  const res = await fetch(`/api/vesting/${recipientId}/schedule`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to load vesting schedule ${recipientId}`);
+  return res.json();
+}
+
+export function recordVestingClaim(input: { recipientId: string; amountDisplay: string; txHash: string }) {
+  return api<VestingScheduleDto>("/api/vesting/claims", { method: "POST", body: JSON.stringify(input) });
 }

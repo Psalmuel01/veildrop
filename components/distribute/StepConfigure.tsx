@@ -5,17 +5,29 @@ import { Input, Label } from "@/components/ui/Input";
 import { SUPPORTED_TOKENS } from "@/lib/tokens";
 import type { DistributionMode } from "@/lib/templates";
 
+export type DurationUnit = "minutes" | "hours" | "days";
+
 export interface DistributionConfig {
   title: string;
   description: string;
   claimStart: string;
   claimEnd: string;
+  cliffValue?: number;
+  cliffUnit?: DurationUnit;
+  vestingValue?: number;
+  vestingUnit?: DurationUnit;
 }
 
 export function defaultDateTimeLocal(offsetMinutes: number): string {
   const d = new Date(Date.now() + offsetMinutes * 60_000);
   d.setSeconds(0, 0);
   return d.toISOString().slice(0, 16);
+}
+
+const UNIT_SECONDS: Record<DurationUnit, number> = { minutes: 60, hours: 3600, days: 86400 };
+
+export function toSeconds(value: number, unit: DurationUnit): number {
+  return Math.max(0, Math.round(value)) * UNIT_SECONDS[unit];
 }
 
 export function StepConfigure({
@@ -113,6 +125,59 @@ export function StepConfigure({
               onChange={(e) => onChange({ ...config, claimEnd: e.target.value })}
             />
           </div>
+        </div>
+      )}
+
+      {mode === "vesting" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="cliffValue">Cliff</Label>
+            <div className="mt-2 flex gap-2">
+              <Input
+                id="cliffValue"
+                type="number"
+                min={0}
+                value={config.cliffValue ?? 0}
+                onChange={(e) => onChange({ ...config, cliffValue: Number(e.target.value) })}
+                className="flex-1"
+              />
+              <select
+                value={config.cliffUnit ?? "days"}
+                onChange={(e) => onChange({ ...config, cliffUnit: e.target.value as DurationUnit })}
+                className="rounded-lg border border-ink-900/[0.08] bg-paper-50 px-3 text-sm text-ink-900 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/40"
+              >
+                <option value="minutes">minutes</option>
+                <option value="hours">hours</option>
+                <option value="days">days</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="vestingValue">Vesting duration (after cliff)</Label>
+            <div className="mt-2 flex gap-2">
+              <Input
+                id="vestingValue"
+                type="number"
+                min={0}
+                value={config.vestingValue ?? 0}
+                onChange={(e) => onChange({ ...config, vestingValue: Number(e.target.value) })}
+                className="flex-1"
+              />
+              <select
+                value={config.vestingUnit ?? "days"}
+                onChange={(e) => onChange({ ...config, vestingUnit: e.target.value as DurationUnit })}
+                className="rounded-lg border border-ink-900/[0.08] bg-paper-50 px-3 text-sm text-ink-900 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/40"
+              >
+                <option value="minutes">minutes</option>
+                <option value="hours">hours</option>
+                <option value="days">days</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-ink-500 sm:col-span-2">
+            Recipients get nothing for {config.cliffValue ?? 0} {config.cliffUnit ?? "days"}, then unlock linearly
+            over the following {config.vestingValue ?? 0} {config.vestingUnit ?? "days"}.
+          </p>
         </div>
       )}
     </div>

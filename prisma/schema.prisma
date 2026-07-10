@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// mode is "disperse", "airdrop", or "vesting". contractAddress holds the
+// airdrop clone or the vesting manager clone address depending on mode, it
+// is not populated for disperse. cliffSeconds and vestingSeconds are only
+// set for vesting, vestingSeconds is the linear unlock duration after the
+// cliff, not the total schedule length.
 model Distribution {
   id               String      @id @default(cuid())
   adminAddress     String
@@ -20,6 +25,8 @@ model Distribution {
   contractAddress  String?
   claimWindowStart DateTime?
   claimWindowEnd   DateTime?
+  cliffSeconds     Int?
+  vestingSeconds   Int?
   status           String      @default("active")
   createdAt        DateTime    @default(now())
   recipients       Recipient[]
@@ -32,23 +39,45 @@ model Distribution {
 // left for the recipient to do. For airdrop mode, claimUrl carries the same
 // payload-encoded link the existing stateless /claim flow already uses, so
 // /claim/[id] can resolve it without duplicating the encrypt and sign logic.
+// For vesting mode, vestingId is the on-chain bytes32 schedule id needed to
+// query or claim against the manager clone, and totalClaimedAmount is the
+// running sum kept in sync by POST /api/vesting/claims as VestingClaim rows
+// accumulate, claimed/revealed are unused (always false) for this mode.
 model Recipient {
-  id             String       @id @default(cuid())
-  distributionId String
-  distribution   Distribution @relation(fields: [distributionId], references: [id])
-  address        String
-  amountDisplay  String
-  claimUrl       String?
-  claimed        Boolean      @default(false)
-  claimedAt      DateTime?
-  revealed       Boolean      @default(false)
-  revealedAt     DateTime?
-  notifiedAt     DateTime?
-  txHash         String?
-  createdAt      DateTime     @default(now())
+  id                 String         @id @default(cuid())
+  distributionId     String
+  distribution       Distribution   @relation(fields: [distributionId], references: [id])
+  address            String
+  amountDisplay      String
+  claimUrl           String?
+  claimed            Boolean        @default(false)
+  claimedAt          DateTime?
+  revealed           Boolean        @default(false)
+  revealedAt         DateTime?
+  notifiedAt         DateTime?
+  txHash             String?
+  createdAt          DateTime       @default(now())
+  vestingId          String?
+  totalClaimedAmount String?
+  vestingClaims      VestingClaim[]
 
   @@index([address])
   @@index([distributionId])
+}
+
+// One row per partial claim against a vesting schedule, so the recipient has
+// a full audit trail. Recipient.totalClaimedAmount holds the running sum
+// across all of a recipient's claims, this table only ever grows, rows are
+// never updated in place.
+model VestingClaim {
+  id            String    @id @default(cuid())
+  recipientId   String
+  recipient     Recipient @relation(fields: [recipientId], references: [id])
+  amountDisplay String
+  txHash        String
+  claimedAt     DateTime  @default(now())
+
+  @@index([recipientId])
 }
 
 model AddressBookEntry {

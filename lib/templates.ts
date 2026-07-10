@@ -1,11 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { Banknote, Users, Landmark, Gift, Megaphone } from "lucide-react";
 
-// A third mode, vesting, is planned as a future addition using the TokenOps
-// SDK's fhe-vesting subpath. It will need its own wizard step for cliff
-// duration and vesting period configuration, plus a recipient side schedule
-// view instead of a one time claim. Not built in this pass.
-export type DistributionMode = "disperse" | "airdrop";
+export type DistributionMode = "disperse" | "airdrop" | "vesting";
 
 export interface DistributionTemplate {
   id: string;

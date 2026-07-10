@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
@@ -11,10 +11,11 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StepTemplate } from "@/components/distribute/StepTemplate";
-import { StepConfigure, defaultDateTimeLocal, type DistributionConfig } from "@/components/distribute/StepConfigure";
+import { StepConfigure, defaultDateTimeLocal, toSeconds, type DistributionConfig } from "@/components/distribute/StepConfigure";
 import { StepRecipients } from "@/components/distribute/StepRecipients";
 import { StepReviewDisperse } from "@/components/distribute/StepReviewDisperse";
 import { StepReviewAirdrop, type AirdropSuccessResult } from "@/components/distribute/StepReviewAirdrop";
+import { StepReviewVesting, type VestingSuccessResult } from "@/components/distribute/StepReviewVesting";
 import { StepSuccess } from "@/components/distribute/StepSuccess";
 import { TEMPLATES, type DistributionMode } from "@/lib/templates";
 import { addManualRecipient, summarizeRecipients, type RecipientRow } from "@/lib/recipients";
@@ -95,6 +96,10 @@ function DistributeWizard() {
   const [draftLoadedAt, setDraftLoadedAt] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lastRunByTemplate, setLastRunByTemplate] = useState<Record<string, string>>({});
+  // Set right before a discard-triggered state reset, so the very next
+  // autosave effect run knows to skip itself instead of immediately
+  // persisting a fresh draft from the reset defaults.
+  const skipNextAutosave = useRef(false);
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
   const selectedToken = getTokenConfig(selectedTokenId);
@@ -150,7 +155,16 @@ function DistributeWizard() {
       setTemplateId(sourceTemplate);
       setMode(source.mode);
       setSelectedTokenId(getTokenConfigByAddress(source.token as `0x${string}`)?.id ?? "veil");
-      setConfig({ title: source.title, description: source.description ?? "", claimStart: "", claimEnd: "" });
+      setConfig({
+        title: source.title,
+        description: source.description ?? "",
+        claimStart: "",
+        claimEnd: "",
+        cliffValue: source.cliffSeconds ? source.cliffSeconds / 86400 : undefined,
+        cliffUnit: source.mode === "vesting" ? "days" : undefined,
+        vestingValue: source.vestingSeconds ? source.vestingSeconds / 86400 : undefined,
+        vestingUnit: source.mode === "vesting" ? "days" : undefined,
+      });
       setAutoTitle(source.title);
       setAutoDescription(source.description ?? "");
       setAutoClaimEnd("");
@@ -168,9 +182,15 @@ function DistributeWizard() {
   }, [duplicateId]);
 
   // Debounced two seconds after the last change, so navigating between steps
-  // or typing doesn't fire an API call on every keystroke.
+  // or typing doesn't fire an API call on every keystroke. Nothing is
+  // persisted while still on the template step, browsing templates without
+  // committing to one shouldn't leave a draft behind.
   useEffect(() => {
-    if (!address || result || step >= 4) return;
+    if (!address || result || step >= 4 || step === 0) return;
+    if (skipNextAutosave.current) {
+      skipNextAutosave.current = false;
+      return;
+    }
     setDraftStatus("saving");
     const timeout = window.setTimeout(() => {
       persistDraft(address, draftId, { step, templateId, mode, selectedTokenId, config, recipients }).then(
@@ -186,6 +206,7 @@ function DistributeWizard() {
 
   function discardDraft() {
     if (draftId) removeDraft(draftId);
+    skipNextAutosave.current = true;
     const initial = TEMPLATES.find((t) => t.id === searchParams.get("template")) ?? TEMPLATES[0]!;
     setStep(0);
     setTemplateId(initial.id);
@@ -204,6 +225,7 @@ function DistributeWizard() {
     setResult(null);
     setDraftId(undefined);
     setDraftLoadedAt(null);
+    setDraftStatus("idle");
   }
 
   // Best effort: every recipient gets remembered for the address book,
@@ -307,6 +329,60 @@ function DistributeWizard() {
     setStep(4);
   }
 
+  async function handleVestingSuccess(vestingResult: VestingSuccessResult) {
+    let scheduleLinks: AirdropSuccessResult["claimLinks"] = vestingResult.schedules.map((s) => ({
+      address: s.address,
+      amountDisplay: s.amountDisplay,
+      url: "",
+    }));
+
+    if (address) {
+      try {
+        const saved = await createDistribution({
+          adminAddress: address,
+          mode: "vesting",
+          template: templateId,
+          title: config.title || template.copy.title,
+          description: config.description || undefined,
+          token: selectedToken.address,
+          tokenSymbol: selectedToken.symbol,
+          txHash: vestingResult.txHash,
+          contractAddress: vestingResult.managerAddress,
+          cliffSeconds: toSeconds(config.cliffValue ?? 0, config.cliffUnit ?? "days"),
+          vestingSeconds: toSeconds(config.vestingValue ?? 0, config.vestingUnit ?? "days"),
+          recipients: vestingResult.schedules.map((s) => ({
+            address: s.address,
+            amountDisplay: s.amountDisplay,
+            vestingId: s.vestingId,
+            claimed: false,
+          })),
+        });
+        const origin = window.location.origin;
+        scheduleLinks = vestingResult.schedules.map((s) => {
+          const savedRecipient = saved.recipients.find((r) => r.address.toLowerCase() === s.address.toLowerCase());
+          return savedRecipient
+            ? { address: s.address, amountDisplay: s.amountDisplay, url: `${origin}/vesting/${savedRecipient.id}`, id: savedRecipient.id }
+            : { address: s.address, amountDisplay: s.amountDisplay, url: "" };
+        });
+      } catch (err) {
+        toast({
+          kind: "error",
+          title: "Saved on-chain, but history sync failed",
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      rememberRecipients();
+      if (draftId) removeDraft(draftId);
+    }
+    setResult({
+      mode: "vesting",
+      txHash: vestingResult.txHash,
+      recipientCount: validRecipients.length,
+      claimLinks: scheduleLinks,
+    });
+    setStep(4);
+  }
+
   const canAdvanceFromRecipients = validRecipients.length > 0 && summary.invalid === 0;
 
   if (!isConnected) {
@@ -335,28 +411,28 @@ function DistributeWizard() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-900/[0.07] bg-paper-50 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-ink-500">
-          <Clock3 className="size-4 text-accent-600" />
-          {draftLoadedAt ? (
-            <span>
-              Draft restored from {new Date(draftLoadedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-            </span>
-          ) : draftStatus === "saving" ? (
-            <span>Saving draft…</span>
-          ) : draftStatus === "saved" ? (
-            <span>Draft saved</span>
-          ) : (
-            <span>Draft auto-saves on this wallet</span>
-          )}
-        </div>
-        {(recipients.length > 0 || step > 0 || !!config.description) && (
+      {(step > 0 || draftLoadedAt) && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-900/[0.07] bg-paper-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-ink-500">
+            <Clock3 className="size-4 text-accent-600" />
+            {draftLoadedAt ? (
+              <span>
+                Draft restored from {new Date(draftLoadedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+              </span>
+            ) : draftStatus === "saving" ? (
+              <span>Saving draft…</span>
+            ) : draftStatus === "saved" ? (
+              <span>Draft saved</span>
+            ) : (
+              <span>Draft auto-saves on this wallet</span>
+            )}
+          </div>
           <Button size="sm" variant="ghost" onClick={discardDraft}>
             <Trash2 className="size-3.5" />
             Discard
           </Button>
-        )}
-      </div>
+        </div>
+      )}
       <Stepper step={step} />
       <Card>
         <CardContent className="py-8">
@@ -413,6 +489,14 @@ function DistributeWizard() {
                 tokenAddress={selectedToken.address}
                 tokenSymbol={selectedToken.symbol}
                 onSuccess={handleDisperseSuccess}
+              />
+            ) : mode === "vesting" ? (
+              <StepReviewVesting
+                recipients={validRecipients}
+                tokenAddress={selectedToken.address}
+                tokenSymbol={selectedToken.symbol}
+                config={config}
+                onSuccess={handleVestingSuccess}
               />
             ) : (
               <StepReviewAirdrop

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import Link from "next/link";
-import { CheckCircle2, Clock3, Eye, Inbox, ShieldCheck, Wallet } from "lucide-react";
+import { CheckCircle2, Clock3, Eye, Inbox, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -14,6 +14,25 @@ function truncate(address: string) {
 }
 
 function RecipientRow({ item }: { item: HistoryRecipient }) {
+  if (item.mode === "vesting") {
+    const hasClaimedSomething = !!item.totalClaimedAmount;
+    return (
+      <Link
+        href={`/vesting/${item.id}`}
+        className="flex items-center justify-between gap-3 rounded-lg border border-ink-900/[0.06] bg-paper-50 px-3.5 py-2.5 transition-colors hover:border-accent-600/40"
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-ink-900">{item.title}</p>
+          <p className="mt-0.5 font-mono text-[11px] text-ink-500">From {truncate(item.adminAddress)}</p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+          <TrendingUp className="size-3" />
+          {hasClaimedSomething ? "Unlocking" : "Vesting"}
+        </span>
+      </Link>
+    );
+  }
+
   const status = !item.claimed ? "unclaimed" : item.revealed ? "revealed" : "claimed";
   return (
     <Link
@@ -67,8 +86,10 @@ export default function ReceivedPage() {
       .finally(() => setIsLoading(false));
   }, [address]);
 
-  const pending = history.filter((h) => !h.claimed);
-  const claimed = history.filter((h) => h.claimed);
+  // Vesting is an ongoing schedule, never boolean "claimed", so it always
+  // stays in the Pending column, distinguished by its own badge instead.
+  const pending = history.filter((h) => h.mode === "vesting" || !h.claimed);
+  const claimed = history.filter((h) => h.mode !== "vesting" && h.claimed);
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-16 sm:px-8">

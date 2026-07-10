@@ -5,12 +5,13 @@ interface RecipientInput {
   address: string;
   amountDisplay: string;
   claimUrl?: string;
+  vestingId?: string;
   claimed: boolean;
 }
 
 interface CreateDistributionBody {
   adminAddress: string;
-  mode: "disperse" | "airdrop";
+  mode: "disperse" | "airdrop" | "vesting";
   template: string;
   title: string;
   description?: string;
@@ -20,6 +21,8 @@ interface CreateDistributionBody {
   contractAddress?: string;
   claimWindowStart?: string;
   claimWindowEnd?: string;
+  cliffSeconds?: number;
+  vestingSeconds?: number;
   recipients: RecipientInput[];
 }
 
@@ -46,12 +49,15 @@ export async function POST(request: NextRequest) {
       contractAddress: body.contractAddress,
       claimWindowStart: body.claimWindowStart ? new Date(body.claimWindowStart) : undefined,
       claimWindowEnd: body.claimWindowEnd ? new Date(body.claimWindowEnd) : undefined,
+      cliffSeconds: body.cliffSeconds,
+      vestingSeconds: body.vestingSeconds,
       status: body.mode === "disperse" ? "completed" : "active",
       recipients: {
         create: body.recipients.map((r) => ({
           address: r.address.toLowerCase(),
           amountDisplay: r.amountDisplay,
           claimUrl: r.claimUrl,
+          vestingId: r.vestingId,
           claimed: r.claimed,
           claimedAt: r.claimed ? new Date() : undefined,
         })),

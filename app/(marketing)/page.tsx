@@ -199,7 +199,9 @@ export default function Home() {
             <span className="text-xl font-bold text-accent-600">.</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-ink-500">
-            <span>Confidential distribution on Sepolia testnet</span>
+            <Link href="/https://github.com/Psalmuel01/veildrop" className="hover:text-ink-900">
+              Github
+            </Link>
             <Link href="/docs" className="hover:text-ink-900">
               Docs
             </Link>

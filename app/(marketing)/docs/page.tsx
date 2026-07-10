@@ -1,20 +1,21 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Send, Gift, Lock, KeyRound, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { Send, Gift, Lock, KeyRound, AlertTriangle, ArrowUpRight, TrendingUp } from "lucide-react";
 import { EncryptedBadge } from "@/components/EncryptedBadge";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 
 export const metadata: Metadata = {
   title: "Docs, VeilDrop",
-  description: "How confidential distribution works, Disperse vs Airdrop, and how to use VeilDrop.",
+  description: "How confidential distribution works, Disperse vs Airdrop vs Vesting, and how to use VeilDrop.",
 };
 
 const SECTIONS = [
   { id: "overview", label: "Overview" },
   { id: "how-it-works", label: "How it works" },
-  { id: "modes", label: "Disperse vs Airdrop" },
+  { id: "modes", label: "Distribution modes" },
   { id: "creating", label: "Creating a distribution" },
   { id: "claiming", label: "Claiming an allocation" },
+  { id: "vesting", label: "Vesting schedule" },
   { id: "tokens", label: "Supported tokens" },
   { id: "faq", label: "FAQ" },
 ];
@@ -125,10 +126,10 @@ export default function DocsPage() {
           </p>
         </Section>
 
-        <Section id="modes" title="Disperse vs Airdrop">
-          <p>VeilDrop ships two distribution mechanisms. The wizard picks a sensible default based on your use case, but you can override it under &quot;Advanced&quot; in step 1.</p>
+        <Section id="modes" title="Distribution modes">
+          <p>VeilDrop ships three distribution mechanisms. The wizard picks a sensible default based on your use case, but you can override it under &quot;Advanced&quot; in step 1.</p>
 
-          <div className="mt-2 grid gap-4 sm:grid-cols-2">
+          <div className="mt-2 grid gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-ink-900/[0.06] p-5">
               <div className="flex items-center gap-2 text-ink-900">
                 <Send className="size-4 text-accent-600" />
@@ -138,7 +139,7 @@ export default function DocsPage() {
                 A push model. You send everything in a single transaction, tokens land directly in
                 each recipient&apos;s wallet. Recipients do nothing to receive them.
               </p>
-              <ul className="mt-3 flex flex-col gap-1.5 text-sm text-ink-500">
+              <ul className="mt-3 flex flex-col gap-1.5 text-xs text-ink-500">
                 <li>+ One transaction, any list size</li>
                 <li>+ Nothing required from recipients</li>
                 <li>− You (the sender) pay all the gas</li>
@@ -154,18 +155,32 @@ export default function DocsPage() {
                 A claim model. You fund a pool and authorize each recipient&apos;s allocation,
                 they claim on their own schedule via a link, within a claim window you set.
               </p>
-              <ul className="mt-3 flex flex-col gap-1.5 text-sm text-ink-500">
+              <ul className="mt-3 flex flex-col gap-1.5 text-xs text-ink-500">
                 <li>+ Recipients pay their own claim gas</li>
                 <li>+ Good for public and opt-in campaigns</li>
                 <li>− One wallet signature per recipient, upfront</li>
                 <li>− Recipients must actively claim</li>
               </ul>
             </div>
+            <div className="rounded-xl border border-ink-900/[0.06] p-5">
+              <div className="flex items-center gap-2 text-ink-900">
+                <TrendingUp className="size-4 text-accent-600" />
+                <h3 className="font-display text-lg font-semibold">Vesting</h3>
+              </div>
+              <p className="mt-2 text-sm">
+                A time-locked claim model. You lock up allocations in a vesting contract. Allocations unlock linearly over a schedule you set.
+              </p>
+              <ul className="mt-3 flex flex-col gap-1.5 text-xs text-ink-500">
+                <li>+ Aligns long-term incentives</li>
+                <li>+ Linear time-based release</li>
+                <li>− Admin pays contract deployment gas</li>
+                <li>− Recipients must claim unlocked slices</li>
+              </ul>
+            </div>
           </div>
           <p className="text-sm text-ink-500">
             Rule of thumb: for large recipient counts, Disperse is the better default. It&apos;s
-            one transaction regardless of list size. Airdrop&apos;s per-recipient signing makes more
-            sense for smaller or genuinely opt-in distributions.
+            one transaction regardless of list size. Airdrop or Vesting make more sense for payroll, team incentives, and smaller, opt-in distributions.
           </p>
         </Section>
 
@@ -223,6 +238,33 @@ export default function DocsPage() {
             Decrypting only reveals the amount to you, in your browser. It&apos;s never sent anywhere
             readable by VeilDrop or anyone else.
           </p>
+        </Section>
+
+        <Section id="vesting" title="Vesting schedule">
+          <p>
+            Vesting is a time-locked release mechanism designed for payroll, team incentives, and investor allocations.
+            Unlike static airdrops, a vesting schedule allows allocations to unlock gradually and linearly over time.
+          </p>
+          <p>
+            Here is the typical lifecycle of a vesting schedule:
+          </p>
+          <ol className="flex flex-col gap-4">
+            {[
+              ["Deploy & Deposit", "The admin deploys a vesting schedule contract for the distribution. The contract holds the total token allocation securely on-chain."],
+              ["Cliff & Duration", "The schedule begins with a cliff period (during which no tokens unlock) followed by linear unlocking over the vesting duration. For example, a 1-year cliff with a 4-year linear vesting schedule."],
+              ["Decrypted Claiming", "Recipients visit the vesting page, sign a free FHE decrypt request to reveal the currently unlocked portion, and submit a transaction to claim that portion to their wallet. The remainder stays locked on-chain."],
+            ].map(([title, body], i) => (
+              <li key={title} className="flex gap-4">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-100 font-mono text-xs font-semibold text-accent-600">
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="font-medium text-ink-900">{title}</p>
+                  <p className="text-sm">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </Section>
 
         <Section id="tokens" title="Supported tokens">

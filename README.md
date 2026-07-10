@@ -42,13 +42,16 @@ Confidentiality is enforced at the protocol level using [Zama's](https://www.zam
 
 ## Distribution Modes
 
-VeilDrop supports two on-chain distribution strategies, both powered by `@tokenops/sdk`:
+VeilDrop supports three on-chain distribution strategies, both powered by `@tokenops/sdk`:
 
 ### Disperse (Push)
 Admin sends tokens to all recipients in a single transaction. Recipients receive tokens automatically — no action required on their end. The admin pays gas for the full distribution.
 
 ### Airdrop (Claim)
 Admin funds a pool and signs a per-recipient claim authorization off-chain. Recipients receive a stateless claim link containing their encrypted payload, and claim on their own schedule. No backend required — the full claim data is encoded in the URL.
+
+### Vesting (Locked Claim)
+Admin funds a vesting contract with linear unlocking schedules. Recipient claims unlocked tokens gradually over time. Only the recipient can decrypt their own vesting progress and claimable amounts.
 
 ---
 
@@ -104,10 +107,12 @@ Applies the schema in `prisma/schema.prisma` and generates the Prisma client.
 | Route | Description |
 |-------|-------------|
 | `/` | Landing page |
-| `/distribute` | Create a new Disperse or Airdrop distribution |
+| `/distribute` | Create a new Disperse, Airdrop, or Vesting distribution |
 | `/dashboard` | All distributions created by the connected wallet |
 | `/dashboard/[id]` | Detail view for a specific distribution |
-| `/claim?payload=...` | Recipient claim portal — decrypt and claim an Airdrop allocation |
+| `/received` | Recipient dashboard — view your private allocations, decrypt sealed values, check claim status |
+| `/claim/[id]` | Recipient claim portal — decrypt and claim an Airdrop allocation |
+| `/vesting/[id]` | Vesting portal — decrypt, claim unlocked tokens, and check your vesting schedule timeline |
 | `/faucet` | Mint testnet tokens (vCTT or CTTT) |
 | `/docs` | In-app documentation |
 

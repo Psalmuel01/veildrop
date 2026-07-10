@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +11,16 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <span className="font-display text-lg font-bold tracking-tight text-ink-900">VeilDrop</span>
             <span className="text-lg font-bold text-accent-600">.</span>
           </Link>
-          <WalletButton />
+          <div className="flex items-center gap-4">
+            <Link
+              href="/docs"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-900/5 hover:text-ink-900"
+            >
+              <BookOpen className="size-4 text-ink-500" />
+              Docs
+            </Link>
+            <WalletButton />
+          </div>
         </div>
       </header>
       {children}

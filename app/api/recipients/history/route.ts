@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     mode: r.distribution.mode,
     adminAddress: r.distribution.adminAddress,
     amountDisplay: r.amountDisplay,
+    tokenSymbol: r.distribution.tokenSymbol,
     claimUrl: r.claimUrl,
     claimed: r.claimed,
     claimedAt: r.claimedAt,

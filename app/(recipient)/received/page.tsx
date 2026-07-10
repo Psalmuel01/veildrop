@@ -3,12 +3,21 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import Link from "next/link";
-import { ArrowDownToLine, CheckCircle2, Clock3, Eye, ExternalLink, Inbox, TrendingUp, Wallet } from "lucide-react";
+import {
+  ArrowDownToLine,
+  CheckCircle2,
+  Clock3,
+  Eye,
+  ExternalLink,
+  Inbox,
+  TrendingUp,
+  Wallet,
+  Lock,
+} from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { BalanceCard } from "@/components/recipient/BalanceCard";
-import { PendingBanner } from "@/components/PendingBanner";
 import { getRecipientHistory, type HistoryRecipient } from "@/lib/api";
 
 const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io/tx/";
@@ -18,20 +27,92 @@ function truncate(address: string) {
 }
 
 function RecipientRow({ item }: { item: HistoryRecipient }) {
-  if (item.mode === "disperse") {
-    // Terminal, nothing to claim in-app, tokens already landed in the
-    // wallet. No reveal here either, there's no per-transfer encrypted
-    // handle to decrypt without new on-chain event-log lookups, only a link
-    // to the transaction itself if we have one.
-    return (
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-ink-900/[0.06] bg-paper-50 px-3.5 py-2.5">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-ink-900">{item.title}</p>
-          <p className="mt-0.5 font-mono text-[11px] text-ink-500">From {truncate(item.adminAddress)}</p>
+  const isVesting = item.mode === "vesting";
+  const isDisperse = item.mode === "disperse";
+
+  const dateStr = new Date(item.createdAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const isRevealed = item.revealed || isDisperse;
+  const isClaimed = item.claimed || (isVesting && Number(item.totalClaimedAmount ?? 0) > 0);
+
+  const containerClasses =
+    "group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-ink-900/[0.06] bg-paper-50 p-4 transition-all duration-200 hover:border-accent-600/40 hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]";
+
+  const renderIcon = () => {
+    if (isDisperse) {
+      return (
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-success-600/10 text-success-700">
+          <ArrowDownToLine className="size-5" />
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-success-600/10 px-2 py-0.5 text-[10px] font-semibold text-success-700">
-            <ArrowDownToLine className="size-3" />
+      );
+    }
+    if (isVesting) {
+      return (
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
+          <TrendingUp className="size-5" />
+        </div>
+      );
+    }
+    return (
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-600/10 text-accent-700">
+        <ArrowDownToLine className="size-5" />
+      </div>
+    );
+  };
+
+  const renderContent = () => (
+    <div className="flex flex-1 items-center gap-3.5 min-w-0">
+      {renderIcon()}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h3 className="truncate text-sm font-semibold text-ink-900 group-hover:text-accent-600 transition-colors">
+            {item.title}
+          </h3>
+          <span className="text-xs text-ink-300">•</span>
+          <span className="text-xs text-ink-400 font-medium">{dateStr}</span>
+        </div>
+        <p className="mt-1 font-mono text-xs text-ink-500 truncate">
+          From {truncate(item.adminAddress)}
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderAmount = () => {
+    if (isRevealed) {
+      return (
+        <div className="flex flex-col items-end shrink-0 text-right">
+          <span className="text-sm font-semibold text-ink-900">
+            {item.amountDisplay} <span className="text-xs font-medium text-ink-500">{item.tokenSymbol}</span>
+          </span>
+          {isVesting && item.totalClaimedAmount && (
+            <span className="text-[10px] text-ink-400 mt-0.5">
+              Claimed: {item.totalClaimedAmount} {item.tokenSymbol}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-1.5 rounded-lg border border-ink-900/[0.08] bg-ink-900/[0.02] px-2.5 py-1.5 text-xs font-medium text-ink-500 transition-colors group-hover:bg-accent-600/5 group-hover:border-accent-600/20 group-hover:text-accent-700">
+        <Lock className="size-3 text-ink-400 group-hover:text-accent-600" />
+        <span className="select-none tracking-wider font-mono">••••••</span>
+        {/* <span className="text-[10px] uppercase text-ink-400 font-bold ml-1 group-hover:text-accent-700">Decrypt</span> */}
+      </div>
+    );
+  };
+
+  const renderStatus = () => {
+    if (isDisperse) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1 rounded-full bg-success-600/10 px-2.5 py-1 text-[10px] font-semibold text-success-700">
+            <CheckCircle2 className="size-3" />
             Received
           </span>
           {item.distributionTxHash && (
@@ -39,72 +120,79 @@ function RecipientRow({ item }: { item: HistoryRecipient }) {
               href={`${SEPOLIA_EXPLORER}${item.distributionTxHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-ink-500 hover:text-accent-600"
-              aria-label="View transaction"
+              className="text-ink-400 hover:text-accent-600 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+              title="View on Etherscan"
             >
               <ExternalLink className="size-3.5" />
             </a>
           )}
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (item.mode === "vesting") {
-    const hasClaimedSomething = !!item.totalClaimedAmount;
-    return (
-      <Link
-        href={`/vesting/${item.id}`}
-        className="flex items-center justify-between gap-3 rounded-lg border border-ink-900/[0.06] bg-paper-50 px-3.5 py-2.5 transition-colors hover:border-accent-600/40"
-      >
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-ink-900">{item.title}</p>
-          <p className="mt-0.5 font-mono text-[11px] text-ink-500">From {truncate(item.adminAddress)}</p>
-        </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+    if (isVesting) {
+      return (
+        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-600">
           <TrendingUp className="size-3" />
-          {hasClaimedSomething ? "Unlocking" : "Vesting"}
+          {isClaimed ? "Unlocking" : "Vesting"}
         </span>
-      </Link>
-    );
-  }
+      );
+    }
 
-  const status = !item.claimed ? "unclaimed" : item.revealed ? "revealed" : "claimed";
-  return (
-    <Link
-      href={`/claim/${item.id}`}
-      className="flex items-center justify-between gap-3 rounded-lg border border-ink-900/[0.06] bg-paper-50 px-3.5 py-2.5 transition-colors hover:border-accent-600/40"
-    >
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-ink-900">{item.title}</p>
-        <p className="mt-0.5 font-mono text-[11px] text-ink-500">From {truncate(item.adminAddress)}</p>
-      </div>
+    // Airdrop
+    const isAirdropClaimed = item.claimed;
+    return (
       <span
-        className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-          status === "unclaimed"
-            ? "bg-amber-500/10 text-amber-600"
-            : status === "claimed"
-              ? "bg-accent-600/10 text-accent-600"
-              : "bg-success-600/10 text-success-700"
+        className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+          isAirdropClaimed
+            ? "bg-success-600/10 text-success-700"
+            : isRevealed
+              ? "bg-accent-600/10 text-accent-700"
+              : "bg-amber-500/10 text-amber-600"
         }`}
       >
-        {status === "unclaimed" ? (
-          <>
-            <Clock3 className="size-3" />
-            Unclaimed
-          </>
-        ) : status === "claimed" ? (
+        {isAirdropClaimed ? (
           <>
             <CheckCircle2 className="size-3" />
             Claimed
           </>
-        ) : (
+        ) : isRevealed ? (
           <>
             <Eye className="size-3" />
             Revealed
           </>
+        ) : (
+          <>
+            <Clock3 className="size-3" />
+            Unclaimed
+          </>
         )}
       </span>
+    );
+  };
+
+  const href = isVesting ? `/vesting/${item.id}` : `/claim/${item.id}`;
+
+  if (isDisperse) {
+    return (
+      <div className={containerClasses}>
+        {renderContent()}
+        <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+          {renderAmount()}
+          {renderStatus()}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Link href={href} className={containerClasses}>
+      {renderContent()}
+      <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+        {renderAmount()}
+        {renderStatus()}
+      </div>
     </Link>
   );
 }
@@ -123,14 +211,13 @@ export default function ReceivedPage() {
   }, [address]);
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
-      <div className="mb-8 text-center">
+    <main className="mx-auto max-w-3xl px-5 py-12 sm:px-8">
+      <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-ink-900">
-          Received<span className="text-accent-600">.</span>
+          My Allocations<span className="text-accent-600">.</span>
         </h1>
         <p className="mt-2 text-sm text-ink-500">
-          Your balance and everything sent to this wallet, in one place. Every amount stays sealed
-          until you decrypt it yourself.
+          Your wallet balance and private allocations in one place. Sealed values require secure cryptographic decryption to view.
         </p>
       </div>
 
@@ -143,16 +230,14 @@ export default function ReceivedPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6">
+        <div className="grid gap-8">
           <div>
-            <p className="mb-2 text-sm font-medium text-ink-900">Your balance</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-400">Your balance</p>
             <BalanceCard />
           </div>
 
-          <PendingBanner />
-
           <div>
-            <p className="mb-2 text-sm font-medium text-ink-900">Recent activity</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-ink-400">Recent activity</p>
             {isLoading ? (
               <Skeleton className="h-48 w-full" />
             ) : history.length === 0 ? (
@@ -168,7 +253,7 @@ export default function ReceivedPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {history.map((item) => (
                   <RecipientRow key={item.id} item={item} />
                 ))}

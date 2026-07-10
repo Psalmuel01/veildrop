@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { ShieldCheck, ShieldAlert, Wallet, AlertTriangle } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Wallet, AlertTriangle, ArrowLeft } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -76,8 +77,19 @@ export default function ClaimByIdPage() {
   const wrongWallet = isConnected && !!address && address.toLowerCase() !== payload.recipient.toLowerCase();
 
   return (
-    <main className="px-5 py-16 sm:px-8">
+    <main className="px-5 py-12 sm:px-8">
       <div className="mx-auto max-w-lg">
+        {/* Back Link */}
+        <div className="mb-6">
+          <Link
+            href="/received"
+            className="inline-flex items-center gap-1.5 text-sm text-ink-500 transition-colors hover:text-ink-900"
+          >
+            <ArrowLeft className="size-4" />
+            Back to allocations
+          </Link>
+        </div>
+
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent-100 text-accent-700">
             <ShieldCheck className="size-6" />

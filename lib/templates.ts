@@ -51,7 +51,7 @@ export const TEMPLATES: DistributionTemplate[] = [
     name: "Investor Distribution",
     description: "Allocations delivered privately, no front running your unlock.",
     icon: Landmark,
-    defaultMode: "disperse",
+    defaultMode: "vesting",
     copy: {
       title: "Investor distribution",
       description: "Investor allocation, delivered privately with no front running your unlock.",

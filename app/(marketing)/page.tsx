@@ -53,7 +53,7 @@ function LandingCta() {
           <ArrowRight className="size-4" />
         </Button>
       </Link>
-      <Link href="/claim">
+      <Link href="/received">
         <Button size="lg" variant="secondary">
           Go as Recipient
         </Button>

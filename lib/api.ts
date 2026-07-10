@@ -42,6 +42,7 @@ export interface PendingRecipient {
   mode: "disperse" | "airdrop" | "vesting";
   adminAddress: string;
   amountDisplay: string;
+  tokenSymbol: string;
   claimUrl: string | null;
   claimWindowEnd: string | null;
   totalClaimedAmount: string | null;

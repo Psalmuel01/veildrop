@@ -1,46 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAccount } from "wagmi";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { getPendingRecipients, type PendingRecipient } from "@/lib/api";
+import { Card, CardContent } from "@/components/ui/Card";
+import { usePendingRecipients } from "@/lib/hooks/usePendingRecipients";
 
 export function PendingBanner() {
-  const { address } = useAccount();
-  const [pending, setPending] = useState<PendingRecipient[]>([]);
+  const { data: pending } = usePendingRecipients();
 
-  useEffect(() => {
-    if (!address) {
-      setPending([]);
-      return;
-    }
-    let cancelled = false;
-    getPendingRecipients(address)
-      .then((result) => {
-        if (!cancelled) setPending(result);
-      })
-      .catch((err) => {
-        // A failed fetch should stay invisible to the recipient (nothing
-        // conclusive to show), but it must not look identical to "genuinely
-        // zero pending distributions" in the logs.
-        console.error("Failed to load pending distributions", err);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [address]);
-
-  if (pending.length === 0) return null;
+  if (!pending || pending.length === 0) return null;
 
   return (
-    <Link
-      href="/received"
-      className="mx-auto mb-8 flex w-fit items-center gap-2 rounded-full border border-accent-600/30 bg-accent-100 px-4 py-2 text-sm font-medium text-accent-600 transition-colors hover:border-accent-600/60"
-    >
-      <Sparkles className="size-4" />
-      You have {pending.length} pending distribution{pending.length !== 1 ? "s" : ""} waiting. View and claim.
-      <ArrowRight className="size-3.5" />
+    <Link href="/received" className="block">
+      <Card className="border-accent-600/25 bg-accent-100/30 transition-colors hover:border-accent-600/50">
+        <CardContent className="flex items-center gap-4 py-5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-600/15 text-accent-600">
+            <Sparkles className="size-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-ink-900">
+              {pending.length} pending distribution{pending.length !== 1 ? "s" : ""} waiting
+            </p>
+            <p className="mt-0.5 text-sm text-ink-500">View and claim what&apos;s been sent to you.</p>
+          </div>
+          <ArrowRight className="size-4 shrink-0 text-accent-600" />
+        </CardContent>
+      </Card>
     </Link>
   );
 }

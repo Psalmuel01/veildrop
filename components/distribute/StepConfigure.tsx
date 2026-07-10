@@ -52,12 +52,12 @@ export function StepConfigure({
 
       <div>
         <Label>Token</Label>
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="mt-2 flex flex-row gap-2">
           {SUPPORTED_TOKENS.map((token) => (
             <button
               key={token.id}
               onClick={() => onTokenChange(token.id)}
-              className={`rounded-lg border-2 px-4 py-3 text-left transition-colors ${selectedTokenId === token.id
+              className={`flex-1 rounded-lg border-2 px-4 py-3 text-left transition-colors ${selectedTokenId === token.id
                   ? "border-accent-600 bg-accent-50"
                   : "border-ink-900/[0.06] bg-paper-100 hover:border-accent-600/40"
                 }`}
@@ -68,13 +68,12 @@ export function StepConfigure({
                     <Coins className="size-4" />
                   </div>
                   <div>
-                    <p className="font-medium text-ink-900">{token.symbol}</p>
+                    <p className="text-sm font-semibold text-ink-900">{token.symbol}</p>
                     <p className="text-xs text-ink-500">{token.name}</p>
                   </div>
                 </div>
-                {selectedTokenId === token.id && <Check className="size-5 text-accent-600" />}
+                {selectedTokenId === token.id && <Check className="size-4 text-accent-600" />}
               </div>
-              <p className="mt-2 text-xs text-ink-500">{token.description}</p>
             </button>
           ))}
         </div>

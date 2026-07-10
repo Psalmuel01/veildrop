@@ -53,6 +53,7 @@ export interface HistoryRecipient extends PendingRecipient {
   claimedAt: string | null;
   revealed: boolean;
   revealedAt: string | null;
+  distributionTxHash: string | null;
 }
 
 export interface AddressBookEntryDto {

@@ -2,22 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, BookOpen } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { WalletButton } from "@/components/WalletButton";
 import { BalanceWidget } from "@/components/admin/BalanceWidget";
+import { ModeToggle } from "@/components/nav/ModeToggle";
 import { useIsZamaReady } from "@/app/providers";
 import { cn } from "@/lib/cn";
 
 const NAV_LINKS = [
-  { href: "/distribute", label: "New Drop" },
   { href: "/dashboard", label: "My Drops" },
+  { href: "/distribute", label: "New Drop" },
   { href: "/faucet", label: "Faucet" },
 ];
 
 export function AdminHeader() {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { chainId, isConnected } = useAccount();
@@ -52,27 +55,27 @@ export function AdminHeader() {
         <div className="flex items-center gap-6">
           {isConnected && (
             <nav className="hidden items-center gap-1 sm:flex">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-900/5 hover:text-ink-900"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {NAV_LINKS.map((link) => {
+                const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-accent-600/10 text-accent-600"
+                        : "text-ink-700 hover:bg-ink-900/5 hover:text-ink-900",
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
           )}
 
-          <Link
-            href="/docs"
-            className="hidden h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-500 transition-colors hover:bg-ink-900/5 hover:text-ink-900 sm:flex"
-            aria-label="Documentation"
-            title="Documentation"
-          >
-            Docs
-            <BookOpen className="size-4" />
-          </Link>
+          {isConnected && <ModeToggle className="hidden sm:block" />}
 
           <div className="flex items-center gap-2">
             {showBalanceControls && (
@@ -103,25 +106,30 @@ export function AdminHeader() {
             className="overflow-hidden border-t border-ink-900/[0.05] bg-paper-100/95 backdrop-blur-md sm:hidden"
           >
             <div className="flex flex-col gap-1 px-5 py-3">
-              {isConnected && NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-ink-700 hover:bg-ink-900/5"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="my-1 border-t border-ink-900/[0.05]" />
-              <Link
-                href="/docs"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-500 hover:bg-ink-900/5"
-              >
-                <BookOpen className="size-4" />
-                Docs
-              </Link>
+              {isConnected && NAV_LINKS.map((link) => {
+                const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-accent-600/10 text-accent-600"
+                        : "text-ink-700 hover:bg-ink-900/5",
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+              {isConnected && (
+                <>
+                  <div className="my-1 border-t border-ink-900/[0.05]" />
+                  <ModeToggle className="mx-3" />
+                </>
+              )}
             </div>
           </motion.nav>
         )}

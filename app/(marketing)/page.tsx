@@ -1,7 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useAccount } from "wagmi";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { LandingDemo } from "@/components/LandingDemo";
-import { PendingBanner } from "@/components/PendingBanner";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
 import { TEMPLATES } from "@/lib/templates";
@@ -20,6 +22,45 @@ const HOW_IT_WORKS = [
     body: "Recipients connect their wallet and decrypt their own allocation. No one else ever can.",
   },
 ];
+
+
+function LandingCta() {
+  const { isConnected } = useAccount();
+
+  if (!isConnected) {
+    return (
+      <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link href="/distribute">
+          <Button size="lg">
+            Launch App
+            <ArrowRight className="size-4" />
+          </Button>
+        </Link>
+        <Link href="/docs">
+          <Button size="lg" variant="secondary">
+            Read docs
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <Link href="/dashboard">
+        <Button size="lg">
+          Go to Admin
+          <ArrowRight className="size-4" />
+        </Button>
+      </Link>
+      <Link href="/claim">
+        <Button size="lg" variant="secondary">
+          Go as Recipient
+        </Button>
+      </Link>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -42,8 +83,6 @@ export default function Home() {
         </span>
 
         <div className="relative mx-auto max-w-5xl">
-          <PendingBanner />
-
           <div className="flex justify-center">
             <Eyebrow>Sepolia testnet</Eyebrow>
           </div>
@@ -55,20 +94,7 @@ export default function Home() {
             Distribute payroll, grants, and investor allocations on-chain with the amount encrypted
             end to end, visible only to the recipient it belongs to.
           </p>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/distribute">
-              <Button size="lg">
-                Start distributing
-                <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-            <Link href="/docs">
-              <Button size="lg" variant="secondary">
-                Read docs
-                {/* <BookOpen className="size-4" /> */}
-              </Button>
-            </Link>
-          </div>
+          <LandingCta />
         </div>
       </section>
 
@@ -162,14 +188,7 @@ export default function Home() {
           <h2 className="mt-4 font-display text-3xl font-bold text-ink-900 sm:text-4xl">
             Distribute in the open. Keep the numbers sealed.
           </h2>
-          <div className="mt-8 flex justify-center">
-            <Link href="/distribute">
-              <Button size="lg">
-                Start distributing
-                <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-          </div>
+          <LandingCta />
         </div>
       </section>
 
